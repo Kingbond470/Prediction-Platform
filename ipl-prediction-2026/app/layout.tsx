@@ -17,10 +17,27 @@ const space = Space_Grotesk({
 export const metadata: Metadata = {
   title: "IPL Prediction 2026 — Beat The AI",
   description: "Predict IPL winners. Prove humans beat AI. Zero money, pure bragging rights.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://iplprediction2026.in"
+  ),
   openGraph: {
     title: "IPL Prediction 2026 — Beat The AI",
     description: "Your cricket knowledge > Algorithms. Predict. Compete. Dominate.",
-    images: [{ url: "https://iplprediction2026.in/og-image.png" }],
+    url: "https://iplprediction2026.in",
+    siteName: "IPL Prediction 2026",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "IPL Prediction 2026 — Beat The AI",
+    description: "Your cricket knowledge > Algorithms. Predict. Compete. Dominate.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

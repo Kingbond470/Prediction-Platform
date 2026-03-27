@@ -58,9 +58,10 @@ ipl-prediction-2026/
 │       └── 001_initial_schema.sql  # Full schema: users, matches, predictions + RLS
 ├── .env.local.example              # Env vars template
 ├── package.json
-├── tailwind.config.ts
+├── tailwind.config.js         ← Must be .js (PostCSS can't read .ts)
+├── postcss.config.js          ← Must be .js (same reason)
 ├── tsconfig.json
-└── next.config.ts
+└── next.config.mjs            ← Must be .mjs (Next.js 14.1 rejects .ts)
 ```
 
 ---

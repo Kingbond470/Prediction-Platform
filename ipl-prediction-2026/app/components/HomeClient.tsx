@@ -63,7 +63,13 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
       setIsModalOpen(false);
       router.push(`/results?match_id=${selectedMatch.id}&predicted=${encodeURIComponent(team)}`);
     } else {
-      alert(data.error || "Failed to create prediction");
+      // If already predicted, take them to results instead of showing an error
+      if (data.error?.toLowerCase().includes("already predicted")) {
+        setIsModalOpen(false);
+        router.push(`/results?match_id=${selectedMatch.id}&predicted=${encodeURIComponent(team)}`);
+        return;
+      }
+      throw new Error(data.error || "Failed to create prediction");
     }
   };
 

@@ -17,10 +17,12 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
   const [loading, setLoading] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setSelectedTeam(null);
+      setError(null);
       // Lock body scroll on mobile
       document.body.style.overflow = "hidden";
       requestAnimationFrame(() => setVisible(true));
@@ -40,11 +42,13 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
   const handleVote = async () => {
     if (!selectedTeam) return;
     setLoading(true);
+    setError(null);
     try {
       await onVote(selectedTeam);
       setSelectedTeam(null);
     } catch (e) {
-      console.error("Vote failed:", e);
+      const msg = e instanceof Error ? e.message : "Something went wrong. Try again.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -128,7 +132,7 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
               return (
                 <button
                   key={team}
-                  onClick={() => setSelectedTeam(team)}
+                  onClick={() => { setSelectedTeam(team); setError(null); }}
                   className="relative p-4 rounded-xl overflow-hidden text-center active:scale-95 transition-all duration-200"
                   style={{
                     background: isSelected
@@ -198,6 +202,14 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
               );
             })}
           </div>
+
+          {/* Inline error */}
+          {error && (
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm mb-4">
+              <span>⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
 
           {/* Match info pill */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-5 text-xs text-gray-500">

@@ -63,6 +63,13 @@ export async function POST(request: NextRequest) {
     };
 
     // ── Validate inputs ───────────────────────────────────────────────────────
+    if (!phone || !name || !username) {
+      return NextResponse.json(
+        { error: "phone, name and username are required" },
+        { status: 400 }
+      );
+    }
+
     const rawPhone = phone.replace(/^\+91/, "");
     const phoneErr    = validatePhone(rawPhone);
     const usernameErr = validateUsername(username);

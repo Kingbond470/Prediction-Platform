@@ -3,7 +3,6 @@
 import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/Button";
-import { Card } from "@/app/components/Card";
 
 const IS_DEV = process.env.NODE_ENV !== "production";
 const DEV_OTP = "123456";
@@ -22,7 +21,6 @@ function SignupForm() {
 
   const formattedPhone = phone.startsWith("+91") ? phone : `+91${phone}`;
 
-  // Step 1: Send OTP
   const handleSendOTP = async () => {
     setLoading(true);
     setError("");
@@ -33,11 +31,8 @@ function SignupForm() {
         body: JSON.stringify({ phone: formattedPhone }),
       });
       const data = await res.json();
-      if (data.success) {
-        setStep("otp");
-      } else {
-        setError(data.error || "Failed to send OTP");
-      }
+      if (data.success) setStep("otp");
+      else setError(data.error || "Failed to send OTP");
     } catch {
       setError("Error sending OTP. Please try again.");
     } finally {
@@ -45,49 +40,27 @@ function SignupForm() {
     }
   };
 
-  // Step 2: Verify OTP (client-side check only, actual verify at account creation)
   const handleVerifyOTP = () => {
-    if (otp.length !== 6) {
-      setError("OTP must be 6 digits");
-      return;
-    }
+    if (otp.length !== 6) { setError("OTP must be 6 digits"); return; }
     setError("");
     setStep("username");
   };
 
-  // Step 3: Create account + verify OTP with Supabase
   const handleCreateAccount = async () => {
-    if (!username || username.length < 3) {
-      setError("Username must be at least 3 characters");
-      return;
-    }
-    if (/\s/.test(username)) {
-      setError("Username cannot contain spaces");
-      return;
-    }
-
+    if (!username || username.length < 3) { setError("Username must be at least 3 characters"); return; }
+    if (/\s/.test(username)) { setError("Username cannot contain spaces"); return; }
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: formattedPhone,
-          otp,
-          name: name || username,
-          username,
-        }),
+        body: JSON.stringify({ phone: formattedPhone, otp, name: name || username, username }),
       });
       const data = await res.json();
-
       if (data.success) {
         localStorage.setItem("userId", data.user_id);
         localStorage.setItem("username", username);
-
-        // After signup, go back to home so the user can submit their prediction.
-        // HomeClient reads userId from localStorage and will show the prediction
-        // modal when they click BEAT THE AI (match is still stored in localStorage).
         router.push("/");
       } else {
         setError(data.error || "Failed to create account");
@@ -99,200 +72,235 @@ function SignupForm() {
     }
   };
 
-  const stepLabels: Record<Step, string> = {
-    phone: "Step 1 of 3 — Enter Phone",
-    otp: "Step 2 of 3 — Verify OTP",
-    username: "Step 3 of 3 — Create Username",
+  const steps: Step[] = ["phone", "otp", "username"];
+  const stepIdx = steps.indexOf(step);
+
+  const stepMeta = {
+    phone:    { label: "Enter Phone",      icon: "📱", title: "Join The Battle" },
+    otp:      { label: "Verify OTP",       icon: "🔐", title: "Verify It's You" },
+    username: { label: "Create Username",  icon: "🏏", title: "Pick Your Name" },
   };
 
   return (
-    <div className="max-w-md mx-auto py-12">
-      {/* Dev mode banner */}
-      {IS_DEV && (
-        <div className="mb-6 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 text-sm">
-          <span className="text-lg leading-none">🛠️</span>
-          <div>
-            <p className="font-semibold text-amber-800">Dev Mode — Phone auth bypassed</p>
-            <p className="text-amber-700 mt-0.5">
-              Use any valid phone number. When asked for OTP, enter{" "}
-              <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono font-bold">
-                {DEV_OTP}
-              </code>
-            </p>
+    <div className="min-h-[80vh] flex items-center justify-center py-8 px-4">
+      <div className="w-full max-w-sm">
+
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 items-center justify-center text-3xl mb-4 shadow-glow-red">
+            🏏
           </div>
+          <h1 className="font-display font-black text-3xl text-white mb-1">
+            {stepMeta[step].title}
+          </h1>
+          <p className="text-gray-500 text-sm">Predict. Compete. Dominate.</p>
         </div>
-      )}
 
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2">Join The Community</h1>
-        <p className="text-gray-500 text-sm">{stepLabels[step]}</p>
-      </div>
+        {/* Progress steps */}
+        <div className="flex items-center gap-2 mb-7">
+          {steps.map((s, i) => (
+            <div key={s} className="flex-1 flex flex-col items-center gap-1.5">
+              <div
+                className="w-full h-1 rounded-full transition-all duration-500"
+                style={{
+                  background: i <= stepIdx ? "#EF4444" : "rgba(255,255,255,0.08)",
+                  boxShadow: i === stepIdx ? "0 0 8px #EF4444" : "none",
+                }}
+              />
+              <span className={`text-xs font-medium transition-colors ${i <= stepIdx ? "text-red-400" : "text-gray-600"}`}>
+                {stepMeta[s].label}
+              </span>
+            </div>
+          ))}
+        </div>
 
-      {/* Progress bar */}
-      <div className="flex gap-1 mb-8">
-        {(["phone", "otp", "username"] as Step[]).map((s, i) => (
-          <div
-            key={s}
-            className={`h-1 flex-1 rounded-full transition-all ${
-              ["phone", "otp", "username"].indexOf(step) >= i
-                ? "bg-red-500"
-                : "bg-gray-200"
-            }`}
-          />
-        ))}
-      </div>
+        {/* Dev banner */}
+        {IS_DEV && (
+          <div className="mb-5 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-3">
+            <span className="text-lg">🛠️</span>
+            <div className="text-xs">
+              <p className="font-bold text-amber-400 mb-0.5">Dev Mode — Auth Bypassed</p>
+              <p className="text-amber-600">
+                Any phone works. OTP:{" "}
+                <code className="bg-amber-500/20 px-1.5 py-0.5 rounded font-mono font-bold text-amber-300">
+                  {DEV_OTP}
+                </code>
+              </p>
+            </div>
+          </div>
+        )}
 
-      <Card>
-        {step === "phone" && (
-          <div className="space-y-4">
+        {/* Card */}
+        <div
+          className="rounded-2xl p-6"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+          }}
+        >
+          {/* Step icon */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/25 flex items-center justify-center text-lg">
+              {stepMeta[step].icon}
+            </div>
             <div>
-              <label className="block text-sm font-semibold mb-2">
-                Phone Number
-              </label>
-              <div className="flex">
-                <span className="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-600 text-sm">
-                  +91
-                </span>
+              <p className="font-semibold text-white">Step {stepIdx + 1} of 3</p>
+              <p className="text-xs text-gray-500">{stepMeta[step].label}</p>
+            </div>
+          </div>
+
+          {/* ── STEP 1: Phone ── */}
+          {step === "phone" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  Phone Number
+                </label>
+                <div className="flex rounded-xl overflow-hidden border border-white/[0.1] focus-within:border-red-500/50 focus-within:shadow-[0_0_0_3px_rgba(239,68,68,0.12)] transition-all">
+                  <div className="flex items-center gap-2 px-3 bg-white/[0.06] border-r border-white/[0.08] text-sm font-semibold text-gray-300 shrink-0">
+                    🇮🇳 +91
+                  </div>
+                  <input
+                    type="tel"
+                    placeholder="98765 43210"
+                    value={phone.replace("+91", "")}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    className="flex-1 px-4 py-3.5 bg-white/[0.04] text-white placeholder-gray-600 focus:outline-none text-base"
+                    maxLength={10}
+                    autoFocus
+                  />
+                </div>
+                <p className="text-xs text-gray-600 mt-1.5">Indian numbers only (+91)</p>
+              </div>
+
+              {error && <ErrorBox message={error} />}
+
+              <Button
+                onClick={handleSendOTP}
+                disabled={phone.replace(/\D/g, "").length !== 10 || loading}
+                loading={loading}
+                size="lg"
+                className="w-full"
+              >
+                Send OTP →
+              </Button>
+            </div>
+          )}
+
+          {/* ── STEP 2: OTP ── */}
+          {step === "otp" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  Enter 6-digit OTP
+                </label>
                 <input
-                  type="tel"
-                  placeholder="98765 43210"
-                  value={phone.replace("+91", "")}
-                  onChange={(e) =>
-                    setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
-                  }
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                  maxLength={10}
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  maxLength={6}
+                  autoFocus
+                  className="w-full px-4 py-4 rounded-xl bg-white/[0.06] border border-white/[0.1] focus:border-red-500/50 focus:bg-white/[0.08] focus:shadow-[0_0_0_3px_rgba(239,68,68,0.12)] text-white text-center text-3xl tracking-[0.5em] font-mono font-bold focus:outline-none transition-all placeholder:text-gray-700 placeholder:tracking-normal placeholder:text-xl"
+                />
+                <p className="text-xs text-gray-600 mt-1.5">
+                  Sent to +91 {phone.replace("+91", "")}
+                </p>
+              </div>
+
+              {error && <ErrorBox message={error} />}
+
+              <Button
+                onClick={handleVerifyOTP}
+                disabled={otp.length !== 6}
+                size="lg"
+                className="w-full"
+              >
+                Verify OTP →
+              </Button>
+
+              <button
+                onClick={() => { setStep("phone"); setOtp(""); setError(""); }}
+                className="w-full py-2.5 text-sm text-gray-500 hover:text-white transition-smooth"
+              >
+                ← Change Number
+              </button>
+            </div>
+          )}
+
+          {/* ── STEP 3: Username ── */}
+          {step === "username" && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  Display Name <span className="text-gray-600 normal-case font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-3.5 rounded-xl bg-white/[0.06] border border-white/[0.1] focus:border-red-500/50 focus:bg-white/[0.08] focus:shadow-[0_0_0_3px_rgba(239,68,68,0.12)] text-white placeholder-gray-600 focus:outline-none transition-all"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                Indian numbers only (+91)
-              </p>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  Username <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">@</span>
+                  <input
+                    type="text"
+                    placeholder="cricketking99"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))}
+                    autoFocus
+                    className="w-full pl-8 pr-4 py-3.5 rounded-xl bg-white/[0.06] border border-white/[0.1] focus:border-red-500/50 focus:bg-white/[0.08] focus:shadow-[0_0_0_3px_rgba(239,68,68,0.12)] text-white placeholder-gray-600 focus:outline-none transition-all"
+                  />
+                </div>
+                <p className="text-xs text-gray-600 mt-1.5">
+                  Min 3 chars · No spaces · Shown on leaderboard
+                </p>
+              </div>
+
+              {error && <ErrorBox message={error} />}
+
+              <Button
+                onClick={handleCreateAccount}
+                disabled={!username || username.length < 3 || loading}
+                loading={loading}
+                size="lg"
+                className="w-full"
+              >
+                🏏 Create Account & Predict
+              </Button>
             </div>
+          )}
+        </div>
 
-            {error && (
-              <p className="text-sm text-red-500 bg-red-50 p-2 rounded">{error}</p>
-            )}
+        <p className="text-center text-xs text-gray-700 mt-5">
+          By signing up you agree to our Terms. No spam, no money, just cricket. 🏏
+        </p>
+      </div>
+    </div>
+  );
+}
 
-            <Button
-              onClick={handleSendOTP}
-              disabled={phone.replace(/\D/g, "").length !== 10 || loading}
-              size="lg"
-              className="w-full"
-            >
-              {loading ? "Sending..." : "Send OTP"}
-            </Button>
-          </div>
-        )}
-
-        {step === "otp" && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2">
-                Enter OTP
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="000000"
-                value={otp}
-                onChange={(e) =>
-                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-                }
-                maxLength={6}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-center text-3xl tracking-widest"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Sent to +91 {phone.replace("+91", "")}
-              </p>
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-500 bg-red-50 p-2 rounded">{error}</p>
-            )}
-
-            <Button
-              onClick={handleVerifyOTP}
-              disabled={otp.length !== 6}
-              size="lg"
-              className="w-full"
-            >
-              Verify OTP
-            </Button>
-
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setStep("phone");
-                setOtp("");
-                setError("");
-              }}
-              size="lg"
-              className="w-full"
-            >
-              Change Number
-            </Button>
-          </div>
-        )}
-
-        {step === "username" && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2">
-                Name <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-2">
-                Username <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                placeholder="cricketking99"
-                value={username}
-                onChange={(e) =>
-                  setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Min 3 characters. No spaces. Shown on leaderboard.
-              </p>
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-500 bg-red-50 p-2 rounded">{error}</p>
-            )}
-
-            <Button
-              onClick={handleCreateAccount}
-              disabled={!username || username.length < 3 || loading}
-              size="lg"
-              className="w-full"
-            >
-              {loading ? "Creating Account..." : "Create Account & Predict"}
-            </Button>
-          </div>
-        )}
-      </Card>
-
-      <p className="text-center text-xs text-gray-400 mt-6">
-        By signing up you agree to our Terms. No spam, no money, just cricket.
-      </p>
+function ErrorBox({ message }: { message: string }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-red-500/10 border border-red-500/25 text-red-400 text-sm">
+      <span>⚠️</span>
+      {message}
     </div>
   );
 }
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<div className="text-center py-12 text-gray-400">Loading...</div>}>
+    <Suspense fallback={<div className="flex justify-center py-24"><div className="w-8 h-8 rounded-full border-2 border-red-500/20 border-t-red-500 animate-spin" /></div>}>
       <SignupForm />
     </Suspense>
   );

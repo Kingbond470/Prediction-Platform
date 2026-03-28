@@ -97,8 +97,14 @@ export async function GET() {
 
     const now = Date.now();
     const day = 24 * 60 * 60 * 1000;
-    const liveMatches = matches || [];
 
+    // Step 2b.1: If Supabase is empty and no Odds API populated it, fall back to mock data
+    if (!matches || matches.length === 0) {
+      console.warn("Supabase matches table is empty — falling back to mock data");
+      return NextResponse.json({ success: true, matches: getMockMatches(), source: "mock" });
+    }
+
+    const liveMatches = matches;
 
     // Step 2c: Refresh any individually stale seed matches that weren't replaced by Odds API
     let staleIdx = 0;

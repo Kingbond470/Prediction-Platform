@@ -37,7 +37,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "OTP sent to your phone",
-      session_id: data?.session?.id,
     });
   } catch {
     return NextResponse.json(

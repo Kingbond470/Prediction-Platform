@@ -1,0 +1,26 @@
+2026-03-28 19:12:29 - src.prediction - INFO - ==================================================
+2026-03-28 19:12:29 - src.prediction - INFO - Generating 2026 IPL predictions
+2026-03-28 19:12:29 - src.prediction - INFO - ==================================================
+2026-03-28 19:12:29 - src.prediction - INFO - Loading model from D:\ai-project\match-predictor\models\trained\best_model.pkl
+2026-03-28 19:12:29 - src.prediction - INFO - Model loaded successfully
+2026-03-28 19:12:29 - src.prediction - INFO - Loading scaler from D:\ai-project\match-predictor\models\scalers\scaler.pkl
+2026-03-28 19:12:29 - src.prediction - INFO - Scaler loaded successfully
+2026-03-28 19:12:29 - src.prediction - INFO - Loading historical feature matrix from D:\ai-project\match-predictor\data\processed\feature_matrix.csv
+2026-03-28 19:12:29 - src.prediction - INFO - Loading fixtures from D:\ai-project\match-predictor\data\external\ipl_2026_fixtures.csv
+2026-03-28 19:12:29 - src.prediction - INFO - Loaded 20 fixtures
+2026-03-28 19:12:29 - src.prediction - INFO - Using 17 features for prediction
+2026-03-28 19:12:31 - src.prediction - INFO - Saved predictions to D:\ai-project\match-predictor\data\processed\predictions_2026.csv
+2026-03-28 19:12:31 - src.prediction - INFO - Generated predictions for 20 matches
+2026-03-28 19:12:31 - src.prediction - INFO - Prediction Summary:
+2026-03-28 19:12:31 - src.prediction - INFO -   DC: 5 wins predicted
+2026-03-28 19:12:31 - src.prediction - INFO -   SRH: 4 wins predicted
+2026-03-28 19:12:31 - src.prediction - INFO -   RR: 4 wins predicted
+2026-03-28 19:12:31 - src.prediction - INFO -   GT: 2 wins predicted
+2026-03-28 19:12:31 - src.prediction - INFO -   MI: 2 wins predicted
+2026-03-28 19:12:31 - src.prediction - INFO -   CSK: 1 wins predicted
+2026-03-28 19:12:31 - src.prediction - INFO -   KKR: 1 wins predicted
+2026-03-28 19:12:31 - src.prediction - INFO -   PBKS: 1 wins predicted
+2026-03-28 19:12:31 - src.prediction - INFO - ==================================================
+2026-03-28 19:12:31 - src.prediction - INFO - Prediction generation complete
+2026-03-28 19:12:31 - src.prediction - INFO - ==================================================
+2026-03-28 19:12:31 - src.prediction - INFO - Generated prediction report at docs\predictions_2026_report.md

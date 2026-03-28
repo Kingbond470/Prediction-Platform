@@ -1,0 +1,21 @@
+match_id,team1,team2,venue,date,toss_winner,toss_decision
+1,SRH,GT,Narendra Modi,2026-03-28,GT,field
+2,SRH,PBKS,Sawai Mansingh,2026-03-29,SRH,
+3,GT,KKR,Sawai Mansingh,2026-03-30,,
+4,CSK,DC,Arun Jaitley,2026-03-31,CSK,bat
+5,GT,SRH,Wankhede,2026-04-01,,
+6,SRH,PBKS,Wankhede,2026-04-02,PBKS,field
+7,MI,KKR,Arun Jaitley,2026-04-03,KKR,
+8,MI,KKR,Chepauk,2026-04-04,MI,field
+9,RR,MI,Rajiv Gandhi,2026-04-05,MI,field
+10,SRH,DC,Arun Jaitley,2026-04-06,,
+11,KKR,MI,Wankhede,2026-04-07,,
+12,DC,RCB,PCA Stadium,2026-04-08,RCB,
+13,RR,DC,Chepauk,2026-04-09,DC,
+14,MI,DC,Chepauk,2026-04-10,MI,bat
+15,PBKS,RR,PCA Stadium,2026-04-11,RR,bat
+16,DC,KKR,PCA Stadium,2026-04-12,DC,field
+17,DC,MI,PCA Stadium,2026-04-13,DC,bat
+18,DC,SRH,Sawai Mansingh,2026-04-14,SRH,
+19,RR,MI,Eden Gardens,2026-04-15,RR,
+20,KKR,RR,PCA Stadium,2026-04-16,RR,

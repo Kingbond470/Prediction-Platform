@@ -1,0 +1,36 @@
+2026-03-28 19:11:40 - src.data_collection - INFO - ==================================================
+2026-03-28 19:11:40 - src.data_collection - INFO - Starting data collection process
+2026-03-28 19:11:40 - src.data_collection - INFO - ==================================================
+2026-03-28 19:11:40 - src.data_collection - INFO - Matches file already exists at D:\ai-project\match-predictor\data\raw\matches.csv
+2026-03-28 19:11:40 - src.data_collection - INFO - Deliveries file already exists at D:\ai-project\match-predictor\data\raw\deliveries.csv
+2026-03-28 19:11:40 - src.data_collection - INFO - Validating raw data files...
+2026-03-28 19:11:40 - src.data_collection - INFO - Matches file exists: matches.csv
+2026-03-28 19:11:40 - src.data_collection - INFO - Matches file readable. Columns: ['id', 'season', 'date', 'team1', 'team2', 'venue', 'city', 'toss_winner', 'toss_decision', 'winner', 'result', 'result_margin', 'dl_applied', 'win_by_runs', 'win_by_wickets']
+2026-03-28 19:11:40 - src.data_collection - INFO - Matches file has expected columns
+2026-03-28 19:11:40 - src.data_collection - INFO - Deliveries file readable. Columns: ['match_id', 'inning', 'over', 'ball', 'batting_team', 'bowling_team', 'batter', 'bowler', 'non_striker', 'runs_off_bat', 'extras', 'wides', 'noballs', 'byes', 'legbyes', 'wicket', 'player_dismissed', 'dismissal_kind', 'fielder']
+2026-03-28 19:11:40 - src.data_collection - INFO - Validation complete
+2026-03-28 19:11:40 - src.data_collection - INFO - Organizing raw data files...
+2026-03-28 19:11:40 - src.data_collection - INFO - Raw data organization complete
+2026-03-28 19:11:40 - src.data_collection - INFO - ==================================================
+2026-03-28 19:11:40 - src.data_collection - INFO - Data collection skipped - files already exist
+2026-03-28 19:11:40 - src.data_collection - INFO - ==================================================
+2026-03-28 19:11:40 - src.preprocessing - INFO - ==================================================
+2026-03-28 19:11:40 - src.preprocessing - INFO - Starting data preprocessing
+2026-03-28 19:11:40 - src.preprocessing - INFO - ==================================================
+2026-03-28 19:11:40 - src.preprocessing - INFO - Loading matches from D:\ai-project\match-predictor\data\raw\matches.csv
+2026-03-28 19:11:40 - src.preprocessing - INFO - Loading deliveries from D:\ai-project\match-predictor\data\raw\deliveries.csv
+2026-03-28 19:11:40 - src.preprocessing - INFO - Cleaning matches data...
+2026-03-28 19:11:40 - src.preprocessing - INFO - Cleaned matches data: 630 rows, 12 columns
+2026-03-28 19:11:40 - src.preprocessing - INFO - Columns: ['match_id', 'season', 'date', 'team1', 'team2', 'venue', 'city', 'toss_winner', 'toss_decision', 'winner', 'result', 'result_margin']
+2026-03-28 19:11:40 - src.preprocessing - INFO - Cleaning deliveries data...
+2026-03-28 19:11:41 - src.preprocessing - INFO - Cleaned deliveries data: 131655 rows, 19 columns
+2026-03-28 19:11:41 - src.preprocessing - INFO - Merging matches with deliveries data...
+2026-03-28 19:11:41 - src.preprocessing - INFO - Merged data shape: (630, 16)
+2026-03-28 19:11:41 - src.preprocessing - INFO - Created target variable 'winner_encoded'
+2026-03-28 19:11:41 - src.preprocessing - INFO - Saved categorical mappings to D:\ai-project\match-predictor\config\categorical_mappings.json
+2026-03-28 19:11:41 - src.preprocessing - INFO - Saved processed data to D:\ai-project\match-predictor\data\processed\cleaned_matches.csv
+2026-03-28 19:11:42 - src.preprocessing - INFO - Saved processed data to D:\ai-project\match-predictor\data\processed\cleaned_deliveries.csv
+2026-03-28 19:11:42 - src.preprocessing - INFO - ==================================================
+2026-03-28 19:11:42 - src.preprocessing - INFO - Preprocessing completed
+2026-03-28 19:11:42 - src.preprocessing - INFO - ==================================================
+2026-03-28 19:12:13 - src.preprocessing - INFO - Saved categorical mappings to D:\ai-project\match-predictor\config\categorical_mappings.json

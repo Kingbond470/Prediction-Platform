@@ -1,0 +1,84 @@
+data:
+  raw_matches: "data/raw/matches.csv"
+  raw_deliveries: "data/raw/deliveries.csv"
+  processed_matches: "data/processed/cleaned_matches.csv"
+  processed_deliveries: "data/processed/cleaned_deliveries.csv"
+  feature_matrix: "data/processed/feature_matrix.csv"
+  predictions_2026: "data/processed/predictions_2026.csv"
+  external_fixtures: "data/external/ipl_2026_fixtures.csv"
+
+features:
+  categorical_columns:
+    - "team1"
+    - "team2"
+    - "venue"
+    - "city"
+    - "toss_winner"
+    - "toss_decision"
+  numerical_columns:
+    - "team1_win_rate_last5"
+    - "team2_win_rate_last5"
+    - "team1_h2h_win_pct"
+    - "team2_h2h_win_pct"
+    - "team1_venue_win_rate"
+    - "team2_venue_win_rate"
+    - "toss_decision_encoded"
+    - "season_period_encoded"
+    - "day_of_week"
+  target: "winner_encoded"
+
+  # Validation strategy
+  validation_strategy: "temporal"  # Time-based split
+  train_cutoff: "2014-12-31"       # Train on data up to 2014
+  val_cutoff: "2016-12-31"         # Validate on 2015-2016
+  # Test will be data from 2017 onwards
+  test_size: 0.2  # Not used for temporal split, kept for reference
+
+  # Feature engineering parameters
+  form_window: 5         # Recent form window (last N matches)
+  h2h_window: 10         # Head-to-head window
+  venue_window: 10       # Venue performance window (all available)
+
+models:
+  random_state: 42
+  n_jobs: -1
+  handle_imbalance: "balanced"  # class_weight='balanced'
+
+  # Model hyperparameters (to be tuned)
+  logistic_regression:
+    C: 1.0
+    penalty: "l2"
+    max_iter: 1000
+    solver: "lbfgs"
+
+  random_forest:
+    n_estimators: 200
+    max_depth: 10
+    min_samples_split: 5
+    min_samples_leaf: 2
+
+  xgboost:
+    n_estimators: 300
+    learning_rate: 0.05
+    max_depth: 6
+    subsample: 0.8
+    colsample_bytree: 0.8
+    use_label_encoder: false
+    eval_metric: "logloss"
+
+paths:
+  models_dir: "models/trained"
+  scalers_dir: "models/scalers"
+  feature_importances_dir: "models/feature_importances"
+  plots_dir: "models/plots"
+  logs_dir: "logs"
+
+training:
+  cv_folds: 5
+  scoring: "roc_auc"
+  save_best_only: true
+  early_stopping_rounds: 50  # For XGBoost
+
+prediction:
+  output_csv: "data/processed/predictions_2026.csv"
+  output_report: "docs/predictions_2026_report.md"

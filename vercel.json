@@ -1,6 +1,3 @@
 {
-  "rootDirectory": "ipl-prediction-2026",
-  "buildCommand": "cd ipl-prediction-2026 && npm run build",
-  "outputDirectory": "ipl-prediction-2026/.next",
-  "installCommand": "cd ipl-prediction-2026 && npm install"
+  "rootDirectory": "ipl-prediction-2026"
 }

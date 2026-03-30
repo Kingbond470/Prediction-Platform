@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { fetchIPLOdds } from "@/app/lib/oddsApi";
 import { supabase } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 // Venue lookup — filled for known IPL home grounds
 // Odds API doesn't provide venue; we infer from home team
 const TEAM_VENUE: Record<string, { venue: string; city: string }> = {

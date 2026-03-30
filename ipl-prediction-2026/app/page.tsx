@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
-import { Match } from "@/lib/supabase";
+import { supabase, Match } from "@/lib/supabase";
 
 const HomeClient = dynamic(() => import("./components/HomeClient"), {
   ssr: false,
@@ -13,17 +13,30 @@ const HomeClient = dynamic(() => import("./components/HomeClient"), {
   ),
 });
 
+function getMockMatches(): Match[] {
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  return [
+    { id: "mock-1", match_number: 1, team_1: "CSK", team_2: "RCB", venue: "MA Chidambaram Stadium", city: "Chennai", match_date: new Date(now + 2 * day).toISOString(), vote_start_time: new Date(now - 60 * 60 * 1000).toISOString(), vote_end_time: new Date(now + 2 * day - 30 * 60 * 1000).toISOString(), team_1_probability: 65, team_2_probability: 35, winner: null, status: "upcoming", initial_count_team_1: 7000, initial_count_team_2: 3000 },
+    { id: "mock-2", match_number: 2, team_1: "MI",  team_2: "DC",  venue: "Arun Jaitley Stadium", city: "Delhi", match_date: new Date(now + 3 * day).toISOString(), vote_start_time: new Date(now - 60 * 60 * 1000).toISOString(), vote_end_time: new Date(now + 3 * day - 30 * 60 * 1000).toISOString(), team_1_probability: 60, team_2_probability: 40, winner: null, status: "upcoming", initial_count_team_1: 6500, initial_count_team_2: 3500 },
+    { id: "mock-3", match_number: 3, team_1: "KKR", team_2: "SRH", venue: "Eden Gardens", city: "Kolkata", match_date: new Date(now + 4 * day).toISOString(), vote_start_time: new Date(now - 60 * 60 * 1000).toISOString(), vote_end_time: new Date(now + 4 * day - 30 * 60 * 1000).toISOString(), team_1_probability: 55, team_2_probability: 45, winner: null, status: "upcoming", initial_count_team_1: 5500, initial_count_team_2: 4500 },
+  ];
+}
+
 async function getMatches(): Promise<Match[]> {
   try {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/matches`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.matches || [];
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return getMockMatches();
+
+    const { data, error } = await supabase
+      .from("matches")
+      .select("*")
+      .order("match_date", { ascending: true })
+      .limit(10);
+
+    if (error || !data || data.length === 0) return getMockMatches();
+    return data as Match[];
   } catch {
-    return [];
+    return getMockMatches();
   }
 }
 

@@ -19,6 +19,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("upcoming");
+  const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
 
   const now = new Date();
 
@@ -44,6 +45,16 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           setIsModalOpen(true);
         }
       }
+
+      fetch(`/api/predictions?user_id=${storedUserId}`)
+        .then((r) => r.json())
+        .then((d) => {
+          const ids = new Set<string>(
+            (d.predictions || []).map((p: { match_id: string }) => p.match_id)
+          );
+          setVotedMatchIds(ids);
+        })
+        .catch(() => {});
     }
 
     // Auto-select tab based on what has content
@@ -78,10 +89,12 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
     const data = await res.json();
 
     if (data.success) {
+      setVotedMatchIds((prev) => new Set(prev).add(selectedMatch.id));
       setIsModalOpen(false);
       router.push(`/results?match_id=${selectedMatch.id}&predicted=${encodeURIComponent(team)}`);
     } else {
       if (data.error?.toLowerCase().includes("already predicted")) {
+        setVotedMatchIds((prev) => new Set(prev).add(selectedMatch.id));
         setIsModalOpen(false);
         router.push(`/results?match_id=${selectedMatch.id}&predicted=${encodeURIComponent(team)}`);
         return;
@@ -150,7 +163,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
         ))
       ) : (
         activeMatches.map((match) => (
-          <MatchCard key={match.id} match={match} onPredict={handlePredict} />
+          <MatchCard key={match.id} match={match} onPredict={handlePredict} alreadyVoted={votedMatchIds.has(match.id)} />
         ))
       )}
 

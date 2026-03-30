@@ -9,9 +9,10 @@ import { getTeamConfig } from "@/app/lib/teams";
 interface MatchCardProps {
   match: Match;
   onPredict: (match: Match) => void;
+  alreadyVoted?: boolean;
 }
 
-export function MatchCard({ match, onPredict }: MatchCardProps) {
+export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardProps) {
   const votingOpen =
     match.status === "upcoming" && new Date() < new Date(match.match_date);
 
@@ -162,7 +163,11 @@ export function MatchCard({ match, onPredict }: MatchCardProps) {
         </div>
 
         {/* CTA */}
-        {votingOpen ? (
+        {alreadyVoted ? (
+          <div className="text-center py-3.5 rounded-xl bg-green-500/10 border border-green-500/20">
+            <p className="text-green-400 text-sm font-semibold">✅ You&apos;ve predicted this match</p>
+          </div>
+        ) : votingOpen ? (
           <Button
             onClick={() => onPredict(match)}
             size="lg"

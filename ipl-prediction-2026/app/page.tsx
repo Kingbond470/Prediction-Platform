@@ -47,9 +47,9 @@ export default async function HomePage() {
 
         {/* Main headline */}
         <h1 className="font-display font-black text-[clamp(3rem,10vw,7rem)] leading-[0.9] tracking-tight mb-4">
-          <span className="text-gradient">BEAT</span>
+          <span className="text-gradient">HUMAN</span>
           <br />
-          <span className="text-white">THE AI</span>
+          <span className="text-white">CAN BEAT AI</span>
         </h1>
 
         <p className="text-gray-400 text-base sm:text-lg mb-2 max-w-xs sm:max-w-sm mx-auto">

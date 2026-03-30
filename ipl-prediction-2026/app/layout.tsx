@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { NavAuth } from "./components/NavAuth";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="color-scheme" content="dark" />
         <meta name="theme-color" content="#07111F" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body className="bg-[#07111F] text-white min-h-screen relative">
         {/* Background gradient blobs */}
@@ -78,17 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
 
             {/* Right */}
-            <div className="flex items-center gap-3">
-              <div className="text-xs text-gray-400 hidden sm:block">
-                <span className="text-white font-semibold">2.1L+</span> predictions
-              </div>
-              <a
-                href="/"
-                className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-smooth"
-              >
-                🏆 Play Now
-              </a>
-            </div>
+            <NavAuth />
           </div>
         </nav>
 

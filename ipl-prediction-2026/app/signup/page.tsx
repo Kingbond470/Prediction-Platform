@@ -264,8 +264,14 @@ function SignupForm() {
           </Button>
         </div>
 
-        <p className="text-center text-xs text-gray-700 mt-5">
+        <p className="text-center text-xs text-gray-700 mt-3">
           No password. No spam. Just cricket. 🏏
+        </p>
+        <p className="text-center text-sm text-gray-600 mt-2">
+          Already have an account?{" "}
+          <a href="/login" className="text-red-400 font-semibold hover:text-red-300 transition-smooth">
+            Login →
+          </a>
         </p>
       </div>
     </div>

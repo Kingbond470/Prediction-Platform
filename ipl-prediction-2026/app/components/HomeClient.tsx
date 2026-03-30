@@ -6,6 +6,7 @@ import { Match } from "@/lib/supabase";
 import { MatchCard } from "./MatchCard";
 import { ResultMatchCard } from "./ResultMatchCard";
 import { PredictionModal } from "./PredictionModal";
+import posthog from "posthog-js";
 
 interface HomeClientProps {
   initialMatches: Match[];
@@ -64,6 +65,13 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   }, [initialMatches]);
 
   const handlePredict = (match: Match) => {
+    posthog.capture("beat_ai_clicked", {
+      match_id: match.id,
+      match_number: match.match_number,
+      team_1: match.team_1,
+      team_2: match.team_2,
+      logged_in: !!userId,
+    });
     if (!userId) {
       localStorage.setItem("selectedMatchId", match.id);
       router.push("/signup");
@@ -89,6 +97,14 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
     const data = await res.json();
 
     if (data.success) {
+      posthog.capture("prediction_submitted", {
+        match_id: selectedMatch.id,
+        match_number: selectedMatch.match_number,
+        predicted_team: team,
+        ai_favourite: selectedMatch.team_1_probability >= 50 ? selectedMatch.team_1 : selectedMatch.team_2,
+        picked_underdog: (team === selectedMatch.team_1 && selectedMatch.team_1_probability < 50) ||
+                         (team === selectedMatch.team_2 && selectedMatch.team_2_probability < 50),
+      });
       setVotedMatchIds((prev) => new Set(prev).add(selectedMatch.id));
       setIsModalOpen(false);
       router.push(`/results?match_id=${selectedMatch.id}&predicted=${encodeURIComponent(team)}`);

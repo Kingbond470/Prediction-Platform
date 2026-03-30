@@ -4,23 +4,36 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Match } from "@/lib/supabase";
 import { MatchCard } from "./MatchCard";
+import { ResultMatchCard } from "./ResultMatchCard";
 import { PredictionModal } from "./PredictionModal";
 
 interface HomeClientProps {
   initialMatches: Match[];
 }
 
+type Tab = "upcoming" | "live" | "results";
+
 export default function HomeClient({ initialMatches }: HomeClientProps) {
   const router = useRouter();
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>("upcoming");
+
+  const now = new Date();
+
+  const liveMatches = initialMatches.filter(
+    (m) => m.status === "live" || (m.status === "upcoming" && new Date(m.match_date) <= now)
+  );
+  const upcomingMatches = initialMatches.filter(
+    (m) => m.status === "upcoming" && new Date(m.match_date) > now
+  );
+  const resultMatches = initialMatches.filter((m) => m.status === "completed");
 
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     setUserId(storedUserId);
 
-    // Auto-open the prediction modal if the user just signed up and had a match selected
     if (storedUserId) {
       const pendingMatchId = localStorage.getItem("selectedMatchId");
       if (pendingMatchId) {
@@ -32,6 +45,11 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
         }
       }
     }
+
+    // Auto-select tab based on what has content
+    if (liveMatches.length > 0) setActiveTab("live");
+    else if (upcomingMatches.length > 0) setActiveTab("upcoming");
+    else if (resultMatches.length > 0) setActiveTab("results");
   }, [initialMatches]);
 
   const handlePredict = (match: Match) => {
@@ -63,7 +81,6 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
       setIsModalOpen(false);
       router.push(`/results?match_id=${selectedMatch.id}&predicted=${encodeURIComponent(team)}`);
     } else {
-      // If already predicted, take them to results instead of showing an error
       if (data.error?.toLowerCase().includes("already predicted")) {
         setIsModalOpen(false);
         router.push(`/results?match_id=${selectedMatch.id}&predicted=${encodeURIComponent(team)}`);
@@ -73,16 +90,66 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
     }
   };
 
+  const tabs: { key: Tab; label: string; icon: string; count: number }[] = [
+    { key: "live",     label: "Live",     icon: "🔴", count: liveMatches.length },
+    { key: "upcoming", label: "Upcoming", icon: "🏏", count: upcomingMatches.length },
+    { key: "results",  label: "Results",  icon: "📊", count: resultMatches.length },
+  ];
+
+  const activeMatches =
+    activeTab === "live" ? liveMatches :
+    activeTab === "upcoming" ? upcomingMatches :
+    resultMatches;
+
   return (
     <>
-      {initialMatches.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-          <p className="text-4xl mb-3">🏏</p>
-          <p className="text-gray-600 font-semibold">No matches available yet</p>
-          <p className="text-gray-400 text-sm mt-1">Check back soon!</p>
+      {/* Tab bar */}
+      <div className="flex gap-2 mb-5 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              activeTab === tab.key
+                ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
+            {tab.count > 0 && (
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                  activeTab === tab.key
+                    ? "bg-red-500/30 text-red-300"
+                    : "bg-white/[0.06] text-gray-600"
+                }`}
+              >
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      {activeMatches.length === 0 ? (
+        <div className="text-center py-12 glass rounded-2xl">
+          <p className="text-4xl mb-3">
+            {activeTab === "live" ? "📺" : activeTab === "upcoming" ? "🏏" : "📊"}
+          </p>
+          <p className="text-gray-400 font-semibold">
+            {activeTab === "live" ? "No live matches right now" :
+             activeTab === "upcoming" ? "No upcoming matches yet" :
+             "No results yet — check back after matches complete"}
+          </p>
         </div>
+      ) : activeTab === "results" ? (
+        resultMatches.map((match) => (
+          <ResultMatchCard key={match.id} match={match} userId={userId} />
+        ))
       ) : (
-        initialMatches.map((match) => (
+        activeMatches.map((match) => (
           <MatchCard key={match.id} match={match} onPredict={handlePredict} />
         ))
       )}

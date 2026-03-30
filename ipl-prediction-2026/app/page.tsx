@@ -31,7 +31,7 @@ async function getMatches(): Promise<Match[]> {
       .from("matches")
       .select("*")
       .order("match_date", { ascending: true })
-      .limit(10);
+      .limit(20);
 
     if (error || !data || data.length === 0) return getMockMatches();
     return data as Match[];
@@ -137,7 +137,7 @@ export default async function HomePage() {
               step: "03",
               icon: "🏆",
               title: "Score & Climb",
-              desc: "Correct pick: +10 pts. Picking the underdog who wins: +15 pts. Beat AI: +5 bonus.",
+              desc: "Correct pick: +1,000 pts. Picking the underdog who wins: +1,500 pts. Beat the AI: +500 bonus.",
               color: "#10B981",
             },
           ].map((item) => (
@@ -226,7 +226,7 @@ export default async function HomePage() {
             },
             {
               q: "📊 How does scoring work?",
-              a: "Correct prediction earns +10 points. If you pick the underdog and they win, you get +15 points. Beat the AI's prediction: +5 bonus points.",
+              a: "Correct prediction earns +1,000 points. Pick the underdog and win: +1,500 points. Beat the AI's prediction: +500 bonus points. The AI earns +1,000 points for every correct prediction too — so every match is a real contest.",
             },
             {
               q: "🤖 How does the AI work?",

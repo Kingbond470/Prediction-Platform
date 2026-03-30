@@ -1,0 +1,49 @@
+# IPL Prediction 2026 — iplprediction2026.in
+
+> A free cricket prediction platform where fans predict IPL match winners and compete against an AI. Zero money. Pure bragging rights.
+
+## What is this?
+
+IPL Prediction 2026 is India's fan cricket prediction community. Users predict which team will win each IPL 2026 match, see what the AI predicts, and compete on a leaderboard. No betting, no money — just cricket knowledge and gut instinct.
+
+## Core Idea: Human Can Beat AI
+
+The platform is built around a single belief: a passionate cricket fan with good instincts can outpredict a machine. AI models work on historical averages — they don't feel momentum, they don't know about dressing room tensions, and they can't account for the crowd going crazy at Eden Gardens. You can. That's the edge.
+
+This mirrors real-world evidence:
+- Crowd prediction markets regularly beat algorithmic models in cricket
+- Magnus Carlsen still beats chess engines in blitz despite computers being "stronger"
+- Nate Silver's model got the 2016 US election wrong — a political junkie with good intuition did not
+- Betfair's in-play crowd odds outperform ML models in live cricket regularly
+
+## Features
+
+- Browse upcoming IPL 2026 matches with live odds
+- Predict the winner before each match
+- See the AI's prediction and probability
+- Track your score on the leaderboard
+- Beat the AI for bonus points
+- Mobile-first, works on any device
+- Free to play, no account required to browse
+
+## Scoring
+
+- Correct prediction: +10 points
+- Underdog winner (you picked the underdog): +15 points
+- Beat the AI's prediction: +5 bonus points
+
+## Technology
+
+Built with Next.js 14, Supabase, and The Odds API for live match data.
+
+## URLs
+
+- Homepage: https://iplprediction2026.in
+- Login: https://iplprediction2026.in/login
+- Sign up: https://iplprediction2026.in/signup
+- Results: https://iplprediction2026.in/results
+
+## Contact
+
+- Website: https://iplprediction2026.in
+- Domain: iplprediction2026.com (redirects to .in)

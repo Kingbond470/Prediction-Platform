@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone } = await request.json();
+    const { phone, username } = await request.json();
 
-    if (!phone) {
-      return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
+    if (!phone || !username) {
+      return NextResponse.json({ error: "Phone number and username are required" }, { status: 400 });
     }
 
     const rawPhone = phone.replace(/\D/g, "").replace(/^91/, "");
@@ -15,12 +15,13 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedPhone = `+91${rawPhone}`;
+    const normalizedUsername = username.trim().toLowerCase();
 
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
       return NextResponse.json({
         success: true,
         user_id: "mock-user-id",
-        username: "mockuser",
+        username: normalizedUsername,
         name: "Mock User",
         mock: true,
       });
@@ -30,12 +31,13 @@ export async function POST(request: NextRequest) {
       .from("users")
       .select("id, username, name")
       .eq("phone", normalizedPhone)
+      .eq("username", normalizedUsername)
       .single();
 
     if (error || !user) {
       return NextResponse.json(
-        { error: "No account found with this number. Please sign up first." },
-        { status: 404 }
+        { error: "Phone number and username don't match. Please check your details." },
+        { status: 401 }
       );
     }
 

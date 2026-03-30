@@ -205,6 +205,22 @@ export default async function HomePage() {
         <div className="space-y-3">
           {[
             {
+              q: "🧠 Can humans really beat AI at predictions?",
+              a: "Absolutely — and it happens all the time. Magnus Carlsen still beats chess engines in blitz. Nate Silver's FiveThirtyEight model got the 2016 US election wrong. AI can't feel momentum, crowd energy, or know that Dhoni had an argument with the coach yesterday. Your gut + cricket knowledge is a real edge.",
+            },
+            {
+              q: "🏏 Why is cricket the perfect sport to beat AI at?",
+              a: "Cricket is gloriously unpredictable. A single over can change everything. AI models work on averages and history — they have no idea a fast bowler has a niggling injury, the pitch is behaving weird, or a player is on a revenge match against his former team. You might. That's the beauty of it.",
+            },
+            {
+              q: "🎯 What's the point if there's no money?",
+              a: "The point is the argument. The banter. The feeling of calling it right when everyone doubted you. Sports were never really about money — they're about being part of a shared moment, having an opinion, and screaming at the TV with your mates. This is that, but on your phone.",
+            },
+            {
+              q: "🔥 Has AI ever been publicly beaten by crowds?",
+              a: "Yes, constantly. Betfair's in-play crowd odds outperform algorithmic models in live cricket regularly. Wisdom-of-the-crowd experiments at the IPL have outpaced ML systems multiple seasons in a row. A room full of passionate cricket fans beats a model trained on dry statistics more often than anyone admits.",
+            },
+            {
               q: "💰 Is this a betting platform?",
               a: "Zero money involved. No real cash, no tokens, nothing. It's a free fan prediction contest — pure cricket knowledge and bragging rights.",
             },
@@ -215,6 +231,10 @@ export default async function HomePage() {
             {
               q: "🤖 How does the AI work?",
               a: "Our model analyses team form, head-to-head records, player stats, venue data, and pitch reports to generate win probabilities for each match.",
+            },
+            {
+              q: "🤝 Is it about winning or losing?",
+              a: "Neither. It's about having a take and standing by it. The whole joy is in the discussion — why you think CSK will win, why your friend disagrees, and finding out together. Right or wrong, you were in the conversation. That's what sport is for.",
             },
             {
               q: "🔒 Is my data safe?",

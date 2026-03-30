@@ -16,30 +16,33 @@ const space = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "IPL Prediction 2026 — Beat The AI",
-  description: "Predict IPL winners. Prove humans beat AI. Zero money, pure bragging rights.",
+  title: "IPL Prediction 2026 — Can Human Beat AI?",
+  description: "Predict IPL 2026 match winners. Prove your cricket instincts beat the AI. Free fan prediction contest — no money, pure bragging rights. Join 2.1L+ fans.",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://iplprediction2026.in"
   ),
+  keywords: [
+    "IPL 2026 prediction", "IPL match prediction", "cricket prediction game",
+    "human vs AI cricket", "beat the AI", "IPL 2026", "free cricket prediction",
+    "IPL winner prediction", "cricket fan contest", "IPL leaderboard",
+  ],
   openGraph: {
-    title: "IPL Prediction 2026 — Beat The AI",
-    description: "Your cricket knowledge > Algorithms. Predict. Compete. Dominate.",
+    title: "IPL Prediction 2026 — Can Human Beat AI?",
+    description: "Your cricket gut feeling vs cold algorithms. Predict IPL winners, beat the AI, climb the leaderboard. Free. No betting.",
     url: "https://iplprediction2026.in",
     siteName: "IPL Prediction 2026",
-    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "IPL Prediction 2026 — Human Can Beat AI" }],
     locale: "en_IN",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "IPL Prediction 2026 — Beat The AI",
-    description: "Your cricket knowledge > Algorithms. Predict. Compete. Dominate.",
+    title: "IPL Prediction 2026 — Can Human Beat AI?",
+    description: "Your cricket gut feeling vs cold algorithms. Free fan prediction contest. Join 2.1L+ fans.",
     images: ["/og-image.png"],
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  robots: { index: true, follow: true },
+  alternates: { canonical: "https://iplprediction2026.in" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -50,6 +53,43 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="color-scheme" content="dark" />
         <meta name="theme-color" content="#07111F" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "IPL Prediction 2026",
+              "url": "https://iplprediction2026.in",
+              "description": "Free IPL 2026 cricket match prediction contest. Predict winners, beat the AI, climb the leaderboard.",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://iplprediction2026.in/?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              },
+              "publisher": {
+                "@type": "Organization",
+                "name": "IPL Prediction 2026",
+                "url": "https://iplprediction2026.in",
+                "logo": { "@type": "ImageObject", "url": "https://iplprediction2026.in/favicon.svg" }
+              }
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SportsOrganization",
+              "name": "IPL Prediction 2026",
+              "url": "https://iplprediction2026.in",
+              "sport": "Cricket",
+              "description": "India's free fan IPL 2026 cricket prediction community. Human Can Beat AI.",
+              "sameAs": ["https://iplprediction2026.com"]
+            })
+          }}
+        />
       </head>
       <body className="bg-[#07111F] text-white min-h-screen relative">
         {/* Background gradient blobs */}

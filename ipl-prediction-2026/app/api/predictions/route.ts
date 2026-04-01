@@ -18,10 +18,19 @@ function getMockMatch(matchId: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { user_id, match_id, predicted_team } = await request.json();
+    const body = await request.json();
+    const { match_id, predicted_team } = body as { match_id: string; predicted_team: string; user_id?: string };
+
+    // Read user identity from httpOnly session cookie — never trust the request body for auth
+    const cookieUserId = request.cookies.get("uid")?.value;
+    // Fallback to body user_id only in mock/dev mode (no cookie set yet)
+    const user_id = cookieUserId || (process.env.NEXT_PUBLIC_SUPABASE_URL ? null : body.user_id);
 
     if (!user_id || !match_id || !predicted_team) {
-      return NextResponse.json({ error: "user_id, match_id and predicted_team are required" }, { status: 400 });
+      if (!user_id) {
+        return NextResponse.json({ error: "Authentication required. Please log in." }, { status: 401 });
+      }
+      return NextResponse.json({ error: "match_id and predicted_team are required" }, { status: 400 });
     }
 
     // ── Try Supabase first ────────────────────────────────────────────────────
@@ -58,9 +67,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // AI prediction based on team probabilities
+    // Validate predicted_team is one of the match's two teams
+    if (predicted_team !== match.team_1 && predicted_team !== match.team_2) {
+      return NextResponse.json(
+        { error: `predicted_team must be "${match.team_1}" or "${match.team_2}"` },
+        { status: 400 }
+      );
+    }
+
+    // AI prediction based on team probabilities (< not > — team_1 wins team_1_probability% of the time)
     const aiPredictedTeam =
-      Math.random() > match.team_1_probability / 100
+      Math.random() < match.team_1_probability / 100
         ? match.team_1
         : match.team_2;
 

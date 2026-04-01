@@ -11,10 +11,15 @@ export function NavAuth() {
     setUsername(localStorage.getItem("username"));
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Clear server-side session cookie
+    await fetch("/api/auth/logout", { method: "POST" });
+    // Clear client-side state
     localStorage.removeItem("userId");
     localStorage.removeItem("username");
     localStorage.removeItem("firstName");
+    localStorage.removeItem("favoriteTeam");
+    localStorage.removeItem("userCity");
     setUsername(null);
     router.push("/");
     router.refresh();

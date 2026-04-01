@@ -73,10 +73,21 @@ export default function ResultsContent() {
           const userPrediction = preds.find((p) => p.match_id === matchId);
           setPrediction(userPrediction || null);
           if (foundMatch) {
-            const seedCount = Math.floor(Math.random() * 20000) + 10000;
-            const t1 = foundMatch.initial_count_team_1 + seedCount;
-            const t2 = foundMatch.initial_count_team_2 + Math.floor(seedCount * 0.55);
-            setCounts({ team_1: t1, team_2: t2, total: t1 + t2 });
+            // Fetch real community vote counts
+            try {
+              const countsRes = await fetch(`/api/predictions/counts?match_id=${matchId}`);
+              const countsData = await countsRes.json();
+              if (countsData.team_1_count !== undefined) {
+                const t1 = foundMatch.initial_count_team_1 + (countsData.team_1_count || 0);
+                const t2 = foundMatch.initial_count_team_2 + (countsData.team_2_count || 0);
+                setCounts({ team_1: t1, team_2: t2, total: t1 + t2 });
+              }
+            } catch {
+              // Fallback to seed counts if API unavailable
+              const t1 = foundMatch.initial_count_team_1;
+              const t2 = foundMatch.initial_count_team_2;
+              setCounts({ team_1: t1, team_2: t2, total: t1 + t2 });
+            }
           }
         }
 

@@ -19,11 +19,11 @@ export async function POST(request: NextRequest) {
     // In non-production environments, skip Supabase phone auth entirely.
     // The UI will show a hint to use OTP "123456".
     if (IS_DEV) {
+      console.log(`[DEV] OTP for ${phone}: ${DEV_OTP}`); // server-side only, never in response
       return NextResponse.json({
         success: true,
         message: "OTP sent to your phone",
         dev: true,
-        devOtp: DEV_OTP,
       });
     }
     // ────────────────────────────────────────────────────────────────────────

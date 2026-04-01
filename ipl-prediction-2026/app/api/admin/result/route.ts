@@ -6,7 +6,7 @@ import { POINTS_CORRECT, POINTS_UNDERDOG, POINTS_BEAT_AI } from "@/app/lib/scori
 function isAuthorized(request: NextRequest): boolean {
   const secret = request.headers.get("x-admin-secret");
   const envSecret = process.env.ADMIN_SECRET;
-  if (!envSecret) return true; // no secret configured → allow (dev mode)
+  if (!envSecret) return false; // no secret configured → DENY ALL (must be set explicitly)
   return secret === envSecret;
 }
 
@@ -31,6 +31,22 @@ export async function POST(request: NextRequest) {
 
     if (matchError || !match) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
+    }
+
+    // Prevent double-scoring an already-completed match
+    if (match.status === "completed") {
+      return NextResponse.json(
+        { error: "Match is already completed. Results have already been scored." },
+        { status: 409 }
+      );
+    }
+
+    // Validate that winner is one of the match's two teams
+    if (winner !== match.team_1 && winner !== match.team_2) {
+      return NextResponse.json(
+        { error: `Winner must be "${match.team_1}" or "${match.team_2}"` },
+        { status: 400 }
+      );
     }
 
     // Determine favourite (higher probability team)

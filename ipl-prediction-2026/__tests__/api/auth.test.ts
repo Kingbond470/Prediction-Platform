@@ -47,14 +47,14 @@ function makeFromChain({
 
 // ── send-otp ─────────────────────────────────────────────────────────────
 describe("POST /api/auth/send-otp (dev mode)", () => {
-  it("returns success + devOtp for a valid +91 phone", async () => {
+  it("returns success for a valid +91 phone (devOtp no longer in response)", async () => {
     const res  = await sendOtp(makeRequest({ phone: "+919876543210" }));
     const json = await res.json();
 
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(json.dev).toBe(true);
-    expect(json.devOtp).toBe("123456");
+    expect(json.devOtp).toBeUndefined(); // OTP is logged server-side only, never sent to client
   });
 
   it("rejects a non-+91 phone number", async () => {

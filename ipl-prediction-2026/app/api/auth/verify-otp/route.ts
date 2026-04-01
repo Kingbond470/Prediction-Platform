@@ -4,12 +4,21 @@ import { NextRequest, NextResponse } from "next/server";
 const IS_DEV = process.env.NODE_ENV !== "production";
 const DEV_OTP = "123456";
 
+function setSessionCookie(res: NextResponse, userId: string): NextResponse {
+  res.cookies.set("uid", userId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  return res;
+}
+
 /**
  * Dev-mode: derive a stable, valid UUID v4 from the phone number.
- * Uses a simple hash spread across the UUID byte positions.
  */
 function devUserIdFromPhone(phone: string): string {
-  // Two independent hashes for 128 bits of material
   let h1 = 0xdeadbeef;
   let h2 = 0x41c6ce57;
   for (let i = 0; i < phone.length; i++) {
@@ -25,12 +34,11 @@ function devUserIdFromPhone(phone: string): string {
   const p = (n: number, len: number) =>
     (n >>> 0).toString(16).padStart(len, "0").slice(0, len);
 
-  // Format as a proper UUID v4 (variant bits set correctly)
   return [
     p(h1, 8),
     p(h1 >>> 8, 4),
-    "4" + p(h2, 3),             // version = 4
-    (8 | ((h2 >>> 4) & 3)).toString(16) + p(h2 >>> 8, 3), // variant = 10xx
+    "4" + p(h2, 3),
+    (8 | ((h2 >>> 4) & 3)).toString(16) + p(h2 >>> 8, 3),
     p(h1 ^ h2, 4) + p(h2 ^ h1, 8),
   ].join("-");
 }
@@ -50,7 +58,6 @@ export async function POST(request: NextRequest) {
 
       const userId = devUserIdFromPhone(phone);
 
-      // Upsert user by phone — no Supabase Auth required
       const { data: existingUser } = await supabase
         .from("users")
         .select("id")
@@ -75,12 +82,16 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      return NextResponse.json({
-        success: true,
-        user_id: existingUser?.id ?? userId,
-        message: "Signup successful (dev mode)",
-        dev: true,
-      });
+      const finalUserId = existingUser?.id ?? userId;
+      return setSessionCookie(
+        NextResponse.json({
+          success: true,
+          user_id: finalUserId,
+          message: "Signup successful (dev mode)",
+          dev: true,
+        }),
+        finalUserId
+      );
     }
     // ────────────────────────────────────────────────────────────────────────
 
@@ -127,11 +138,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      user_id: userId,
-      message: "Signup successful",
-    });
+    return setSessionCookie(
+      NextResponse.json({
+        success: true,
+        user_id: userId,
+        message: "Signup successful",
+      }),
+      userId
+    );
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

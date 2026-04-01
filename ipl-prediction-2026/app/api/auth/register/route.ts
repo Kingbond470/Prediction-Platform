@@ -1,5 +1,20 @@
 import { supabase } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
+import { TEAM_CONFIG } from "@/app/lib/teams";
+
+const VALID_TEAMS = new Set(Object.keys(TEAM_CONFIG));
+
+// ── Session cookie helper ─────────────────────────────────────────────────────
+function setSessionCookie(res: NextResponse, userId: string): NextResponse {
+  res.cookies.set("uid", userId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+  });
+  return res;
+}
 
 // ── Server-side validation ────────────────────────────────────────────────────
 function validatePhone(phone: string): string | null {
@@ -81,17 +96,26 @@ export async function POST(request: NextRequest) {
     if (nameErr)     return NextResponse.json({ error: nameErr },     { status: 400 });
     if (usernameErr) return NextResponse.json({ error: usernameErr }, { status: 400 });
 
+    // Validate favorite_team if provided
+    if (favorite_team && !VALID_TEAMS.has(favorite_team.toUpperCase())) {
+      return NextResponse.json({ error: "Invalid team selection" }, { status: 400 });
+    }
+
     const normalizedPhone = `+91${rawPhone}`;
+    const normalizedTeam = favorite_team ? favorite_team.toUpperCase() : null;
     const userId = stableUuidFromPhone(normalizedPhone);
 
     // ── No Supabase configured → mock mode ────────────────────────────────────
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      return NextResponse.json({
-        success: true,
-        user_id: userId,
-        message: "Registered (mock mode — no Supabase configured)",
-        mock: true,
-      });
+      return setSessionCookie(
+        NextResponse.json({
+          success: true,
+          user_id: userId,
+          message: "Registered (mock mode — no Supabase configured)",
+          mock: true,
+        }),
+        userId
+      );
     }
 
     // ── Check if phone already registered ────────────────────────────────────
@@ -103,12 +127,15 @@ export async function POST(request: NextRequest) {
 
     if (existingByPhone) {
       // Return existing user so they can continue seamlessly
-      return NextResponse.json({
-        success: true,
-        user_id: existingByPhone.id,
-        message: "Welcome back!",
-        existing: true,
-      });
+      return setSessionCookie(
+        NextResponse.json({
+          success: true,
+          user_id: existingByPhone.id,
+          message: "Welcome back!",
+          existing: true,
+        }),
+        existingByPhone.id
+      );
     }
 
     // ── Check username uniqueness ─────────────────────────────────────────────
@@ -132,7 +159,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       username: username.trim(),
       ...(city ? { city: city.trim() } : {}),
-      ...(favorite_team ? { favorite_team } : {}),
+      ...(normalizedTeam ? { favorite_team: normalizedTeam } : {}),
     });
 
     if (insertError) {
@@ -146,11 +173,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 400 });
     }
 
-    return NextResponse.json({
-      success: true,
-      user_id: userId,
-      message: "Account created successfully!",
-    });
+    return setSessionCookie(
+      NextResponse.json({
+        success: true,
+        user_id: userId,
+        message: "Account created successfully!",
+      }),
+      userId
+    );
   } catch (err) {
     console.error("[/api/auth/register]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

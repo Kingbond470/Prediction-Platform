@@ -62,11 +62,79 @@ async function getMatches(): Promise<Match[]> {
   }
 }
 
+// FAQ items mirrored in JSON-LD for Google rich snippets
+const FAQ_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Who will win today's IPL match?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Nobody knows for sure — that's exactly why we built this. Make your free IPL prediction today, see what the AI predicts, and find out after the match who called it right. The community's collective wisdom is live on this page right now.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can humans really beat AI at IPL predictions?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Absolutely — and it happens all the time. AI can't feel momentum, crowd energy, or know that a player is on a revenge match against his former team. Your gut plus cricket knowledge is a real edge.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Is this a betting platform?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Zero money involved. No real cash, no tokens, nothing. It's a free fan prediction contest — pure cricket knowledge and bragging rights.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What are the Weekly Voucher Rewards?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Every week, 10 fans who predicted at least one match correctly are selected and each receive a ₹100 Swiggy or Zomato gift card. Winners are announced every Monday morning. Weekly voucher rewards are complimentary gifts for correct predictors. No purchase or payment is required. This is not a lottery or prize competition.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How does scoring work?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Correct prediction earns +1,000 points. Pick the underdog and win: +1,500 points. Beat the AI's prediction: +500 bonus points.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What exactly is IPL Prediction 2026?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "IPL Prediction 2026 is a social opinion poll and fan engagement platform. It is not a gambling, betting, or prize competition platform. Zero money is involved at any stage — no entry fees, no cash prizes, no virtual currency. Think of it as Twitter polls meets cricket.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Is IPL prediction platform legal in India?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. IPL Prediction 2026 is a free social opinion poll and fan engagement platform. No money is involved at any stage — no entry fees, no cash prizes, no virtual currency. It is not a betting, gambling, or lottery platform. Weekly voucher rewards are complimentary gifts, not prizes in a competition.",
+      },
+    },
+  ],
+};
+
 export default async function HomePage() {
   const matches = await getMatches();
 
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_SCHEMA) }}
+      />
       {/* ── Hero ─────────────────────────────────────────────────── */}
       <section className="relative text-center mb-14 pt-4 pb-8">
         {/* Radial glow behind hero text */}

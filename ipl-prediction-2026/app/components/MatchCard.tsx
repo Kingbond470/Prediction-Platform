@@ -5,6 +5,7 @@ import { Button } from "./Button";
 import { TeamBadge } from "./TeamBadge";
 import { CountdownTimer } from "./CountdownTimer";
 import { getTeamConfig } from "@/app/lib/teams";
+import { matchToSlug } from "@/lib/matchSlug";
 
 interface MatchCardProps {
   match: Match;
@@ -180,6 +181,16 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
             <p className="text-gray-500 text-sm font-medium">Voting closed for this match</p>
           </div>
         )}
+
+        {/* Crawlable link for Google — hidden visually but indexable */}
+        <a
+          href={`/predict/${matchToSlug(match)}`}
+          className="sr-only"
+          tabIndex={-1}
+          aria-label={`${match.team_1} vs ${match.team_2} IPL 2026 prediction`}
+        >
+          {match.team_1} vs {match.team_2} prediction
+        </a>
       </div>
     </div>
   );

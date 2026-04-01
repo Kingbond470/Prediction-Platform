@@ -1,6 +1,28 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { supabase, Match } from "@/lib/supabase";
+
+export const metadata: Metadata = {
+  title: "Today's IPL Match Prediction 2026 — Free Cricket Prediction | Beat the AI",
+  description: "Who will win today's IPL match? Make your free cricket prediction for IPL 2026, compete against AI, and climb the leaderboard. No money — pure cricket instincts. Join 2.1L+ fans.",
+  keywords: [
+    // P0 target keywords
+    "today match prediction", "IPL prediction today", "who will win today IPL match",
+    "IPL 2026 winner prediction", "cricket prediction free", "free IPL prediction",
+    "IPL 2026 match today", "cricket fan prediction", "IPL prediction game",
+    // Discovery terms — people searching these find us (not used in visible copy)
+    "cricket lucky draw", "IPL prize prediction", "IPL prediction lottery",
+    "cricket betting alternative", "IPL fan contest", "IPL gambling free",
+    "IPL cash prediction", "cricket prediction prize",
+  ],
+  openGraph: {
+    title: "Today's IPL Match Prediction 2026 — Beat the AI",
+    description: "Who will win today's IPL match? Free cricket prediction contest — predict, beat the AI, climb the leaderboard.",
+    url: "https://iplprediction2026.in",
+  },
+  alternates: { canonical: "https://iplprediction2026.in" },
+};
 
 const HomeClient = dynamic(() => import("./components/HomeClient"), {
   ssr: false,
@@ -69,7 +91,7 @@ export default async function HomePage() {
           Your cricket instincts <span className="text-white font-semibold">&gt;</span> cold algorithms
         </p>
         <p className="text-gray-600 text-sm max-w-[260px] sm:max-w-xs mx-auto mb-8 sm:mb-10">
-          Predict IPL winners · Climb the leaderboard · Zero money
+          Free IPL 2026 winner prediction · Beat the AI · Zero money
         </p>
 
         {/* Stats row */}
@@ -205,6 +227,10 @@ export default async function HomePage() {
         <div className="space-y-3">
           {[
             {
+              q: "🏏 Who will win today's IPL match?",
+              a: "Nobody knows for sure — that's exactly why we built this. Make your free IPL prediction today, see what the AI predicts, and find out after the match who called it right. The community's collective wisdom is live on this page right now.",
+            },
+            {
               q: "🧠 Can humans really beat AI at predictions?",
               a: "Absolutely — and it happens all the time. Magnus Carlsen still beats chess engines in blitz. Nate Silver's FiveThirtyEight model got the 2016 US election wrong. AI can't feel momentum, crowd energy, or know that Dhoni had an argument with the coach yesterday. Your gut + cricket knowledge is a real edge.",
             },
@@ -225,6 +251,10 @@ export default async function HomePage() {
               a: "Zero money involved. No real cash, no tokens, nothing. It's a free fan prediction contest — pure cricket knowledge and bragging rights.",
             },
             {
+              q: "⚖️ What exactly is IPL Prediction 2026?",
+              a: "IPL Prediction 2026 is a social opinion poll and fan engagement platform. It is not a gambling, betting, or prize competition platform. Zero money is involved at any stage — no entry fees, no cash prizes, no virtual currency. Weekly voucher rewards are complimentary gifts for correct predictors, not prizes in a competition. Think of it as Twitter polls meets cricket — fans sharing opinions on match outcomes.",
+            },
+            {
               q: "📊 How does scoring work?",
               a: "Correct prediction earns +1,000 points. Pick the underdog and win: +1,500 points. Beat the AI's prediction: +500 bonus points. The AI earns +1,000 points for every correct prediction too — so every match is a real contest.",
             },
@@ -235,6 +265,10 @@ export default async function HomePage() {
             {
               q: "🤝 Is it about winning or losing?",
               a: "Neither. It's about having a take and standing by it. The whole joy is in the discussion — why you think CSK will win, why your friend disagrees, and finding out together. Right or wrong, you were in the conversation. That's what sport is for.",
+            },
+            {
+              q: "🎟️ What are the Weekly Voucher Rewards?",
+              a: "Every week, 10 fans who predicted at least one match correctly are selected and each receive a ₹100 Swiggy or Zomato gift card. Winners are announced every Monday morning on the platform and on Instagram/X. Weekly voucher rewards are complimentary gifts distributed to correct predictors. No purchase or payment is required. This is not a lottery or prize competition.",
             },
             {
               q: "🔒 Is my data safe?",

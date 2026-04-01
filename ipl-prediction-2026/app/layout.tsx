@@ -24,9 +24,11 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://iplprediction2026.in"
   ),
   keywords: [
+    "today match prediction", "IPL prediction today", "who will win today IPL match",
+    "IPL 2026 winner prediction", "cricket prediction free", "IPL match prediction with AI",
+    "beat AI cricket prediction", "IPL prediction leaderboard",
     "IPL 2026 prediction", "IPL match prediction", "cricket prediction game",
-    "human vs AI cricket", "beat the AI", "IPL 2026", "free cricket prediction",
-    "IPL winner prediction", "cricket fan contest", "IPL leaderboard",
+    "human vs AI cricket", "beat the AI", "free cricket prediction", "IPL leaderboard",
   ],
   openGraph: {
     title: "IPL Prediction 2026 — Can Human Beat AI?",

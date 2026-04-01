@@ -6,6 +6,9 @@ import { Match, Prediction } from "@/lib/supabase";
 import { Button } from "@/app/components/Button";
 import { TeamBadge } from "@/app/components/TeamBadge";
 import { getTeamConfig } from "@/app/lib/teams";
+import WeeklyWinnersBanner from "@/app/components/WeeklyWinnersBanner";
+import WeeklyPoolBanner from "@/app/components/WeeklyPoolBanner";
+import PastWinners from "@/app/components/PastWinners";
 
 interface LeaderboardEntry {
   id: string;
@@ -37,6 +40,7 @@ export default function ResultsContent() {
   const [activeTab, setActiveTab] = useState<"prediction" | "leaderboard">("prediction");
   const [barsVisible, setBarsVisible] = useState(false);
   const barsRef = useRef<HTMLDivElement>(null);
+  const [showPastWinners, setShowPastWinners] = useState(false);
 
   const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const username = typeof window !== "undefined" ? localStorage.getItem("username") : null;
@@ -137,6 +141,12 @@ export default function ResultsContent() {
   return (
     <div className="max-w-2xl mx-auto py-6 space-y-5 animate-slide-up">
 
+      {/* ── Weekly Winners Banner (Mon–Wed only) ──────────────── */}
+      <WeeklyWinnersBanner
+        userId={userId}
+        onSeeWinners={() => setShowPastWinners(true)}
+      />
+
       {/* ── Match Header ──────────────────────────────────────── */}
       <div className="text-center mb-2">
         <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">
@@ -170,7 +180,7 @@ export default function ResultsContent() {
         {/* Locked in badge */}
         <div className="text-center mb-5">
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/15 border border-green-500/30 text-green-400 text-xs font-bold uppercase tracking-wide">
-            ✅ Prediction Locked In
+            ✅ Your IPL Prediction vs AI — Locked In
           </span>
         </div>
 
@@ -221,6 +231,9 @@ export default function ResultsContent() {
           </p>
         </div>
       </div>
+
+      {/* ── Weekly Draw Pool Banner ───────────────────────────── */}
+      <WeeklyPoolBanner userId={userId} matchId={matchId ?? undefined} />
 
       {/* ── Community Pulse ──────────────────────────────────── */}
       {counts && (
@@ -356,7 +369,7 @@ export default function ResultsContent() {
       {/* ── Leaderboard Tab ──────────────────────────────────── */}
       {activeTab === "leaderboard" && (
         <div className="rounded-2xl glass p-5">
-          <h3 className="font-display font-bold text-white text-lg mb-5">🏆 Top Predictors</h3>
+          <h3 className="font-display font-bold text-white text-lg mb-5">🏆 IPL Prediction Leaderboard</h3>
 
           {leaderboard.length === 0 ? (
             <div className="text-center py-12">
@@ -430,6 +443,11 @@ export default function ResultsContent() {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Past Winners Modal ────────────────────────────────── */}
+      {showPastWinners && (
+        <PastWinners onClose={() => setShowPastWinners(false)} />
       )}
     </div>
   );

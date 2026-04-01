@@ -4,6 +4,7 @@ import "./globals.css";
 import { NavAuth } from "./components/NavAuth";
 import { Analytics } from "@vercel/analytics/react";
 import { PostHogProvider } from "./components/PostHogProvider";
+import ThemeProvider from "./components/ThemeProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -97,9 +98,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-[#07111F] text-white min-h-screen relative">
         <PostHogProvider>
-          {/* Background gradient blobs */}
+          <ThemeProvider />
+
+          {/* Background gradient blobs — tinted with team color */}
           <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-            <div className="absolute -top-[30%] -left-[10%] w-[70%] h-[70%] rounded-full bg-red-600/[0.04] blur-[120px]" />
+            <div
+              className="absolute -top-[30%] -left-[10%] w-[70%] h-[70%] rounded-full blur-[120px]"
+              style={{ background: "rgba(var(--tc-r,239), var(--tc-g,68), var(--tc-b,68), 0.04)" }}
+            />
             <div className="absolute top-[20%] -right-[15%] w-[60%] h-[60%] rounded-full bg-amber-500/[0.03] blur-[100px]" />
             <div className="absolute bottom-0 left-[30%] w-[40%] h-[40%] rounded-full bg-blue-600/[0.04] blur-[100px]" />
           </div>
@@ -107,9 +113,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* Premium Navigation */}
           <nav className="sticky top-0 z-50 border-b border-white/[0.07]" style={{ background: "rgba(7,17,31,0.85)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
             <div className="max-w-5xl mx-auto px-4 h-14 flex justify-between items-center">
-              {/* Logo */}
+              {/* Logo — uses team color */}
               <a href="/" className="flex items-center gap-2.5 group">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-sm shadow-glow-sm group-hover:scale-105 transition-smooth">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-sm group-hover:scale-105 transition-smooth"
+                  style={{
+                    background: "linear-gradient(135deg, var(--tc, #EF4444), color-mix(in srgb, var(--tc, #EF4444) 70%, black))",
+                    boxShadow: "0 0 16px rgba(var(--tc-r,239), var(--tc-g,68), var(--tc-b,68), 0.35)",
+                  }}
+                >
                   🏏
                 </div>
                 <div>
@@ -118,8 +130,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
               </a>
 
-              {/* Center: Live badge */}
-              <div className="hidden sm:flex items-center gap-1.5 live-badge">
+              {/* Center: Live badge — team colored */}
+              <div
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase"
+                style={{
+                  background: "rgba(var(--tc-r,239), var(--tc-g,68), var(--tc-b,68), 0.1)",
+                  border: "1px solid rgba(var(--tc-r,239), var(--tc-g,68), var(--tc-b,68), 0.3)",
+                  color: "var(--tc, #EF4444)",
+                }}
+              >
                 <span className="live-dot" />
                 SEASON LIVE
               </div>
@@ -139,7 +158,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="max-w-5xl mx-auto px-4">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-md bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-xs">
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-xs" style={{ background: "linear-gradient(135deg, var(--tc, #EF4444), color-mix(in srgb, var(--tc, #EF4444) 70%, black))" }}>
                     🏏
                   </div>
                   <span className="text-gray-500 text-sm font-semibold">IPL PREDICTION 2026</span>

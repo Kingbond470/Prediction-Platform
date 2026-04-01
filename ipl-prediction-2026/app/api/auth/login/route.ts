@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     const { data: user, error } = await supabase
       .from("users")
-      .select("id, username, name")
+      .select("id, username, name, city, favorite_team")
       .eq("phone", normalizedPhone)
       .eq("username", normalizedUsername)
       .single();
@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
       username: user.username,
       name: user.name,
+      city: user.city ?? null,
+      favorite_team: user.favorite_team ?? null,
     });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

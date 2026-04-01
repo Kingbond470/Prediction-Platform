@@ -37,7 +37,7 @@ function devUserIdFromPhone(phone: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone, otp, name, username } = await request.json();
+    const { phone, otp, name, username, city, favorite_team } = await request.json();
 
     // ── Dev bypass ──────────────────────────────────────────────────────────
     if (IS_DEV) {
@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
           phone,
           name: name || username,
           username,
+          ...(city ? { city } : {}),
+          ...(favorite_team ? { favorite_team } : {}),
         });
 
         if (insertError && !insertError.message.includes("duplicate")) {
@@ -113,6 +115,8 @@ export async function POST(request: NextRequest) {
         phone,
         name,
         username,
+        ...(city ? { city } : {}),
+        ...(favorite_team ? { favorite_team } : {}),
       });
 
       if (insertError) {

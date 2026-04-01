@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/Button";
+import { setFavoriteTeam } from "@/app/components/ThemeProvider";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,6 +33,9 @@ export default function LoginPage() {
         localStorage.setItem("userId", data.user_id);
         localStorage.setItem("username", data.username);
         localStorage.setItem("firstName", data.name);
+        if (data.city) localStorage.setItem("userCity", data.city);
+        if (data.favorite_team) localStorage.setItem("favoriteTeam", data.favorite_team);
+        setFavoriteTeam(data.favorite_team ?? null);
         router.push("/");
       } else {
         setError(data.error || "Login failed. Please try again.");

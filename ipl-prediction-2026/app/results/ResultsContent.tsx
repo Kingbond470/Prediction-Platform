@@ -386,12 +386,13 @@ export default function ResultsContent() {
                   <div
                     key={user.id}
                     className={`flex items-center justify-between p-3.5 rounded-xl transition-smooth ${
-                      isMe ? "border border-red-500/30" : "border border-white/[0.04]"
+                      isMe ? "border border-white/[0.12]" : "border border-white/[0.04]"
                     }`}
                     style={{
                       background: isMe
-                        ? "linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.04))"
+                        ? `linear-gradient(135deg, rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.1), rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.04))`
                         : "rgba(255,255,255,0.03)",
+                      ...(isMe ? { borderColor: `rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.3)` } : {}),
                     }}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -399,7 +400,8 @@ export default function ResultsContent() {
                         {medal ?? `#${idx + 1}`}
                       </span>
                       <div className="min-w-0">
-                        <p className={`font-semibold truncate text-sm ${isMe ? "text-red-400" : "text-white"}`}>
+                        <p className={`font-semibold truncate text-sm ${isMe ? "" : "text-white"}`}
+                           style={isMe ? { color: "var(--tc, #EF4444)" } : {}}>
                           {user.username} {isMe && <span className="text-xs text-gray-500">(you)</span>}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -423,8 +425,8 @@ export default function ResultsContent() {
             <div
               className="mt-4 p-4 rounded-xl"
               style={{
-                background: "linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04))",
-                border: "1px solid rgba(239,68,68,0.25)",
+                background: `linear-gradient(135deg, rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.12), rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.04))`,
+                border: `1px solid rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.25)`,
               }}
             >
               <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-3">Your Standing</p>

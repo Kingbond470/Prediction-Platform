@@ -130,6 +130,7 @@ function SignupForm() {
         localStorage.setItem("firstName", firstName.trim());
         if (favoriteTeam) localStorage.setItem("favoriteTeam", favoriteTeam);
         if (city.trim()) localStorage.setItem("userCity", city.trim());
+        localStorage.setItem("newSignup", "1");
         router.push("/");
       } else {
         setServerError(data.error || "Something went wrong. Please try again.");

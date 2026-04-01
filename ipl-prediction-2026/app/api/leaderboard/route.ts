@@ -5,12 +5,12 @@ export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get("user_id");
 
-    // Get top 10
+    // Get top 50
     const { data: top10 } = await supabase
       .from("leaderboard_humans")
       .select("*")
       .order("rank", { ascending: true })
-      .limit(10);
+      .limit(50);
 
     // Get user's rank
     let userRank = null;

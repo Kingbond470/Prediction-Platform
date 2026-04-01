@@ -119,10 +119,15 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
 
         {/* Body */}
         <div className="px-5 pt-4 pb-6">
-          <p className="text-sm text-gray-400 text-center mb-5">
+          <p className="text-sm text-gray-400 text-center mb-3">
             Who wins? 🤔 Pick a side — then{" "}
             <span className="text-white font-semibold">outsmart the AI</span>
           </p>
+          <div className="flex justify-center gap-3 mb-5 text-xs">
+            <span className="px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 font-semibold">✓ Correct +1,000 pts</span>
+            <span className="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-semibold">🏆 Underdog +1,500 pts</span>
+            <span className="px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-semibold">🤖 Beat AI +500</span>
+          </div>
 
           {/* Team Selection */}
           <div className="grid grid-cols-2 gap-3 mb-5">

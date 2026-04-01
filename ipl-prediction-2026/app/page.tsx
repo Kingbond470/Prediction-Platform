@@ -188,7 +188,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Matches ──────────────────────────────────────────────── */}
-      <section className="mb-14">
+      <section id="matches" className="mb-14">
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-display font-bold text-2xl text-white">
             ⚔️ Upcoming Battles
@@ -282,9 +282,9 @@ export default async function HomePage() {
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
               Join India&apos;s fastest growing cricket prediction community. Free to play, no betting, just vibes.
             </p>
-            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm shadow-glow-red cursor-pointer hover:shadow-[0_4px_30px_rgba(239,68,68,0.5)] transition-smooth">
+            <a href="#matches" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm shadow-glow-red hover:shadow-[0_4px_30px_rgba(239,68,68,0.5)] transition-smooth">
               🏏 Start Predicting — It&apos;s Free
-            </div>
+            </a>
           </div>
         </div>
       </section>

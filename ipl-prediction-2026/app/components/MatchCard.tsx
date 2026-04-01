@@ -165,9 +165,12 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
 
         {/* CTA */}
         {alreadyVoted ? (
-          <div className="text-center py-3.5 rounded-xl bg-green-500/10 border border-green-500/20">
-            <p className="text-green-400 text-sm font-semibold">✅ You&apos;ve predicted this match</p>
-          </div>
+          <a
+            href={`/results?match_id=${match.id}`}
+            className="block text-center py-3.5 rounded-xl bg-green-500/10 border border-green-500/20 hover:bg-green-500/15 transition-smooth"
+          >
+            <p className="text-green-400 text-sm font-semibold">✅ Predicted — View Your Pick →</p>
+          </a>
         ) : votingOpen ? (
           <Button
             onClick={() => onPredict(match)}

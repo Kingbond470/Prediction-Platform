@@ -21,6 +21,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("upcoming");
   const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const now = new Date();
 
@@ -37,6 +38,12 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
     setUserId(storedUserId);
 
     if (storedUserId) {
+      // Show welcome banner once after signup
+      if (localStorage.getItem("newSignup") === "1") {
+        setShowWelcome(true);
+        localStorage.removeItem("newSignup");
+      }
+
       const pendingMatchId = localStorage.getItem("selectedMatchId");
       if (pendingMatchId) {
         const match = initialMatches.find((m) => m.id === pendingMatchId);
@@ -132,6 +139,21 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
 
   return (
     <>
+      {/* Welcome banner — shown once after signup */}
+      {showWelcome && (
+        <div className="mb-4 px-4 py-3.5 rounded-2xl flex items-center justify-between gap-3 border border-green-500/25"
+          style={{ background: "linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))" }}>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="text-white font-bold text-sm">You&apos;re in! Pick a match below and beat the AI.</p>
+              <p className="text-green-400 text-xs mt-0.5">Correct pick = 1,000 pts · Underdog win = 1,500 pts · Beat AI = +500 bonus</p>
+            </div>
+          </div>
+          <button onClick={() => setShowWelcome(false)} className="text-gray-500 hover:text-white transition-smooth shrink-0 text-lg">✕</button>
+        </div>
+      )}
+
       {/* Tab bar */}
       <div className="flex gap-2 mb-5 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
         {tabs.map((tab) => (

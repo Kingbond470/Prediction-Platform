@@ -56,10 +56,12 @@ function stableUuidFromPhone(phone: string): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { phone, name, username } = body as {
+    const { phone, name, username, city, favorite_team } = body as {
       phone: string;
       name: string;
       username: string;
+      city?: string | null;
+      favorite_team?: string | null;
     };
 
     // ── Validate inputs ───────────────────────────────────────────────────────
@@ -129,6 +131,8 @@ export async function POST(request: NextRequest) {
       phone: normalizedPhone,
       name: name.trim(),
       username: username.trim(),
+      ...(city ? { city: city.trim() } : {}),
+      ...(favorite_team ? { favorite_team } : {}),
     });
 
     if (insertError) {

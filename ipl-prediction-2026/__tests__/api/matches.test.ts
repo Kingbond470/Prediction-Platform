@@ -44,29 +44,61 @@ const MOCK_MATCH = {
   initial_count_team_2: 3000,
 };
 
-function makeChain(result: object, predictionRows: object[] = []) {
-  const chain: Record<string, jest.Mock> = {
-    select:  jest.fn().mockReturnThis(),
-    order:   jest.fn().mockReturnThis(),
-    limit:   jest.fn().mockResolvedValue(result),
-    update:  jest.fn().mockReturnThis(),
-    eq:      jest.fn().mockResolvedValue({ error: null }),
-    // .in() used by the predictions count query for stale matches
-    in:      jest.fn().mockResolvedValue({ data: predictionRows, error: null }),
+/**
+ * Route now makes 3 supabase.from() calls:
+ *   1. matches — upcoming/live  (.select.in.order.limit)
+ *   2. matches — completed      (.select.eq.order.limit)
+ *   3. predictions              (.select.in)  ← only when stale matches exist
+ *
+ * We route each call by table name via mockImplementation.
+ */
+function setupMocks({
+  upcomingData = [] as object[],
+  completedData = [] as object[],
+  predictionData = [] as object[],
+  upcomingError = null as object | null,
+} = {}) {
+  // Chain for matches queries (supports both .in() and .eq() filters)
+  const matchChain: Record<string, jest.Mock> = {
+    select: jest.fn().mockReturnThis(),
+    in:     jest.fn().mockReturnThis(),   // filter by status array
+    eq:     jest.fn().mockReturnThis(),   // filter by status = "completed"
+    order:  jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    limit:  jest.fn(),                    // resolves differently per call
   };
-  // Make update().eq() work
-  chain.update.mockReturnValue({ eq: chain.eq });
-  return chain;
+  matchChain.update.mockReturnValue({ eq: jest.fn().mockResolvedValue({ error: null }) });
+
+  // First limit() call → upcoming/live; second → completed
+  let limitCallCount = 0;
+  matchChain.limit.mockImplementation(() => {
+    limitCallCount++;
+    if (limitCallCount === 1) {
+      return Promise.resolve({ data: upcomingData, error: upcomingError });
+    }
+    return Promise.resolve({ data: completedData, error: null });
+  });
+
+  // Chain for predictions table (.select.in resolves immediately)
+  const predChain = {
+    select: jest.fn().mockReturnThis(),
+    in:     jest.fn().mockResolvedValue({ data: predictionData, error: null }),
+  };
+
+  mockFrom.mockImplementation((table: string) =>
+    table === "predictions" ? predChain : matchChain
+  );
+
+  return { matchChain, predChain };
 }
 
 describe("GET /api/matches", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("returns matches from Supabase when they have future dates", async () => {
-    const chain = makeChain({ data: [MOCK_MATCH], error: null });
-    mockFrom.mockReturnValue(chain);
+    setupMocks({ upcomingData: [MOCK_MATCH] });
 
-    const res = await GET();
+    const res  = await GET();
     const json = await res.json();
 
     expect(res.status).toBe(200);
@@ -75,55 +107,80 @@ describe("GET /api/matches", () => {
     expect(json.matches[0].team_1).toBe("CSK");
   });
 
+  it("includes completed matches from the separate completed query", async () => {
+    const completedMatch = { ...MOCK_MATCH, id: "match-2", status: "completed", winner: "CSK" };
+    setupMocks({ upcomingData: [MOCK_MATCH], completedData: [completedMatch] });
+
+    const res  = await GET();
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.matches).toHaveLength(2);
+    // upcoming first, then completed
+    expect(json.matches[0].status).toBe("upcoming");
+    expect(json.matches[1].status).toBe("completed");
+  });
+
   it("returns mock data when NEXT_PUBLIC_SUPABASE_URL is not set", async () => {
     const original = process.env.NEXT_PUBLIC_SUPABASE_URL;
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-    const res = await GET();
+    const res  = await GET();
     const json = await res.json();
 
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(json.matches.length).toBeGreaterThan(0);
-    // Mock matches always have future dates
     expect(new Date(json.matches[0].match_date).getTime()).toBeGreaterThan(Date.now());
 
     process.env.NEXT_PUBLIC_SUPABASE_URL = original;
   });
 
-  it("returns 500 when Supabase returns an error", async () => {
-    const chain = makeChain({ data: null, error: { message: "DB connection failed" } });
-    mockFrom.mockReturnValue(chain);
+  it("returns 500 when Supabase returns an error on the upcoming query", async () => {
+    setupMocks({ upcomingError: { message: "DB connection failed" } });
 
-    const res = await GET();
+    const res  = await GET();
     const json = await res.json();
 
     expect(res.status).toBe(500);
     expect(json.error).toBe("DB connection failed");
   });
 
-  it("auto-refreshes all-stale matches with future dates and persists to DB", async () => {
+  it("auto-refreshes stale seed matches (0 predictions) with future dates", async () => {
     const staleMatch = { ...MOCK_MATCH, match_date: PAST_DATE, status: "upcoming" };
-    const chain = makeChain({ data: [staleMatch], error: null });
-    mockFrom.mockReturnValue(chain);
+    const { matchChain } = setupMocks({
+      upcomingData: [staleMatch],
+      predictionData: [],  // no predictions → should reset date
+    });
 
-    const res = await GET();
+    const res  = await GET();
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    expect(json.success).toBe(true);
-    // match_date was refreshed to the future
     expect(new Date(json.matches[0].match_date).getTime()).toBeGreaterThan(Date.now());
-    // update was called on Supabase
-    expect(chain.update).toHaveBeenCalled();
+    expect(matchChain.update).toHaveBeenCalled();
   });
 
-  it("returns empty matches array when Supabase returns null data", async () => {
-    // Simulate Supabase returning no rows but no error (after stale check)
-    const chain = makeChain({ data: [], error: null });
-    mockFrom.mockReturnValue(chain);
+  it("marks stale matches with predictions as live instead of resetting date", async () => {
+    const staleMatch = { ...MOCK_MATCH, match_date: PAST_DATE, status: "upcoming" };
+    const { matchChain } = setupMocks({
+      upcomingData: [staleMatch],
+      predictionData: [{ match_id: "match-1" }],  // has a prediction
+    });
 
-    const res = await GET();
+    const res  = await GET();
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.matches[0].status).toBe("live");
+    // update called with status: "live", not a new date
+    expect(matchChain.update).toHaveBeenCalledWith({ status: "live" });
+  });
+
+  it("returns empty matches array when both queries return no rows", async () => {
+    setupMocks({ upcomingData: [], completedData: [] });
+
+    const res  = await GET();
     const json = await res.json();
 
     expect(res.status).toBe(200);

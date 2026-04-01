@@ -84,20 +84,33 @@ export async function GET() {
       }
     }
 
-    // Step 2b: Fetch from Supabase (has proper UUIDs for predictions)
-    const { data: matches, error } = await supabase
-      .from("matches")
-      .select("*")
-      .order("match_date", { ascending: true })
-      .limit(10);
+    // Step 2b: Fetch from Supabase — two queries to ensure completed matches
+    // are never dropped by a date-ordered limit.
+    const [upcomingRes, completedRes] = await Promise.all([
+      supabase
+        .from("matches")
+        .select("*")
+        .in("status", ["upcoming", "live"])
+        .order("match_date", { ascending: true })
+        .limit(50),
+      supabase
+        .from("matches")
+        .select("*")
+        .eq("status", "completed")
+        .order("match_date", { ascending: false })
+        .limit(50),
+    ]);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (upcomingRes.error) {
+      return NextResponse.json({ error: upcomingRes.error.message }, { status: 500 });
     }
+
+    // Merge: upcoming/live first (sorted by date), completed after (newest first)
+    const allMatches = [...(upcomingRes.data || []), ...(completedRes.data || [])];
 
     const now = Date.now();
     const day = 24 * 60 * 60 * 1000;
-    const liveMatches = matches || [];
+    const liveMatches = allMatches;
 
 
     // Step 2c: For stale matches, only reset seed matches with 0 predictions.

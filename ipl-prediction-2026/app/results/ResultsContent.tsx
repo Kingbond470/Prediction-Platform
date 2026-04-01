@@ -45,8 +45,11 @@ export default function ResultsContent() {
   const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const username = typeof window !== "undefined" ? localStorage.getItem("username") : null;
 
+  const [allPredictions, setAllPredictions] = useState<Prediction[]>([]);
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
+
   useEffect(() => {
-    if (!matchId || !userId) { setLoading(false); return; }
+    if (!userId) { setLoading(false); return; }
 
     const fetchData = async () => {
       try {
@@ -59,21 +62,26 @@ export default function ResultsContent() {
           matchRes.json(), predRes.json(), leaderRes.json(),
         ]);
 
-        const foundMatch = matchData.matches?.find((m: Match) => m.id === matchId);
-        setMatch(foundMatch || null);
+        const matches: Match[] = matchData.matches || [];
+        setAllMatches(matches);
+        const preds: Prediction[] = predData.predictions || [];
+        setAllPredictions(preds);
 
-        const userPrediction = predData.predictions?.find((p: Prediction) => p.match_id === matchId);
-        setPrediction(userPrediction || null);
+        if (matchId) {
+          const foundMatch = matches.find((m) => m.id === matchId);
+          setMatch(foundMatch || null);
+          const userPrediction = preds.find((p) => p.match_id === matchId);
+          setPrediction(userPrediction || null);
+          if (foundMatch) {
+            const seedCount = Math.floor(Math.random() * 20000) + 10000;
+            const t1 = foundMatch.initial_count_team_1 + seedCount;
+            const t2 = foundMatch.initial_count_team_2 + Math.floor(seedCount * 0.55);
+            setCounts({ team_1: t1, team_2: t2, total: t1 + t2 });
+          }
+        }
 
         setLeaderboard(leaderData.top_10 || []);
         setUserRank(leaderData.user_rank || null);
-
-        if (foundMatch) {
-          const seedCount = Math.floor(Math.random() * 20000) + 10000;
-          const t1 = foundMatch.initial_count_team_1 + seedCount;
-          const t2 = foundMatch.initial_count_team_2 + Math.floor(seedCount * 0.55);
-          setCounts({ team_1: t1, team_2: t2, total: t1 + t2 });
-        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -115,13 +123,91 @@ export default function ResultsContent() {
     );
   }
 
-  if (!match || !prediction) {
+  // No specific match in URL — show full prediction history + leaderboard
+  if (!matchId || !match || !prediction) {
     return (
-      <div className="text-center py-24">
-        <div className="text-6xl mb-4">📊</div>
-        <h2 className="text-xl font-display font-bold text-white mb-2">No prediction found</h2>
-        <p className="text-gray-400 mb-6">Head back and make your call!</p>
-        <Button onClick={() => router.push("/")}>← Browse Matches</Button>
+      <div className="max-w-2xl mx-auto py-6 space-y-5 animate-slide-up">
+        <WeeklyWinnersBanner userId={userId!} onSeeWinners={() => setShowPastWinners(true)} />
+
+        <div className="text-center mb-2">
+          <h1 className="font-display font-black text-3xl text-white">My Predictions</h1>
+          <p className="text-gray-500 text-sm mt-1">Your full prediction history for IPL 2026</p>
+        </div>
+
+        {allPredictions.length === 0 ? (
+          <div className="rounded-2xl glass p-10 text-center">
+            <div className="text-5xl mb-3">🏏</div>
+            <p className="text-white font-semibold mb-1">No predictions yet</p>
+            <p className="text-gray-500 text-sm mb-5">Pick a match and beat the AI!</p>
+            <Button onClick={() => router.push("/")}>Browse Matches →</Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {allPredictions.map((pred) => {
+              const m = allMatches.find((x) => x.id === pred.match_id);
+              if (!m) return null;
+              const myTeam = getTeamConfig(pred.predicted_team);
+              const aiTeam = getTeamConfig(pred.ai_predicted_team || "");
+              const isCorrect = pred.is_correct;
+              const isPending = isCorrect === null || isCorrect === undefined;
+              return (
+                <div
+                  key={pred.id}
+                  className="rounded-2xl glass p-4 cursor-pointer hover:border-white/[0.12] transition-smooth border border-white/[0.06]"
+                  onClick={() => router.push(`/results?match_id=${m.id}&predicted=${encodeURIComponent(pred.predicted_team)}`)}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500 font-semibold uppercase tracking-widest">Match #{m.match_number}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isPending ? "bg-yellow-500/15 text-yellow-400" : isCorrect ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}>
+                      {isPending ? "⏳ Pending" : isCorrect ? "✅ Correct" : "❌ Wrong"}
+                    </span>
+                  </div>
+                  <p className="font-display font-bold text-white text-base">{m.team_1} vs {m.team_2}</p>
+                  <div className="flex items-center gap-4 mt-2 text-sm">
+                    <span style={{ color: myTeam.color }}>You: <strong>{pred.predicted_team}</strong></span>
+                    <span className="text-gray-600">·</span>
+                    <span className="text-gray-400">AI: <strong style={{ color: aiTeam.color }}>{pred.ai_predicted_team || "—"}</strong></span>
+                    {pred.points_earned ? <span className="ml-auto text-amber-400 font-bold">+{pred.points_earned}pts</span> : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Leaderboard */}
+        <div className="rounded-2xl glass p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display font-bold text-white text-lg">🏆 Leaderboard</h3>
+            <button onClick={() => router.push("/leaderboard")} className="text-xs text-gray-400 hover:text-white transition-smooth">See full →</button>
+          </div>
+          {leaderboard.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-6">No rankings yet — be the first!</p>
+          ) : (
+            <div className="space-y-2">
+              {leaderboard.slice(0, 5).map((user, idx) => {
+                const isMe = user.username === username;
+                const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : null;
+                return (
+                  <div key={user.id} className={`flex items-center justify-between p-3 rounded-xl ${isMe ? "border" : "border border-white/[0.04]"}`}
+                    style={{ background: isMe ? `rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.08)` : "rgba(255,255,255,0.03)", ...(isMe ? { borderColor: `rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.3)` } : {}) }}>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-6 text-center text-sm ${!medal ? "text-gray-500 font-bold text-xs" : ""}`}>{medal ?? `#${idx + 1}`}</span>
+                      <p className="font-semibold text-sm" style={isMe ? { color: "var(--tc,#EF4444)" } : { color: "white" }}>
+                        {user.username}{isMe && <span className="text-xs text-gray-500 ml-1">(you)</span>}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-display font-black text-sm text-white">{user.total_predictions}<span className="text-xs text-gray-500 ml-0.5">pred</span></p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {showPastWinners && <PastWinners onClose={() => setShowPastWinners(false)} />}
       </div>
     );
   }

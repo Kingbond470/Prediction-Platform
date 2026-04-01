@@ -100,12 +100,36 @@ export async function GET() {
     const liveMatches = matches || [];
 
 
-    // Step 2c: Refresh any individually stale seed matches that weren't replaced by Odds API
+    // Step 2c: For stale matches, only reset seed matches with 0 predictions.
+    // Matches with predictions should stay as-is (mark live) so users can see their votes.
+    const staleMatches = liveMatches.filter(
+      (m) => new Date(m.match_date).getTime() < now && m.status === "upcoming"
+    );
+
+    // Batch-fetch which stale matches have predictions to avoid N+1 queries
+    const staleIds = staleMatches.map((m) => m.id);
+    let matchIdsWithPredictions = new Set<string>();
+    if (staleIds.length > 0) {
+      const { data: predRows } = await supabase
+        .from("predictions")
+        .select("match_id")
+        .in("match_id", staleIds);
+      matchIdsWithPredictions = new Set((predRows || []).map((r) => r.match_id));
+    }
+
     let staleIdx = 0;
     const refreshed = await Promise.all(
       liveMatches.map(async (m) => {
-        const isStale = new Date(m.match_date).getTime() < now;
+        const isStale = new Date(m.match_date).getTime() < now && m.status === "upcoming";
         if (!isStale) return m;
+
+        // Has real predictions → mark live so users can see their vote on results page
+        if (matchIdsWithPredictions.has(m.id)) {
+          await supabase.from("matches").update({ status: "live" }).eq("id", m.id);
+          return { ...m, status: "live" as const };
+        }
+
+        // Empty seed match → push date forward so app stays usable in demo
         staleIdx++;
         const newMatchDate = new Date(now + staleIdx * day);
         const updated = {

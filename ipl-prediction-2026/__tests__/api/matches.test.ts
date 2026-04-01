@@ -44,13 +44,15 @@ const MOCK_MATCH = {
   initial_count_team_2: 3000,
 };
 
-function makeChain(result: object) {
-  const chain = {
+function makeChain(result: object, predictionRows: object[] = []) {
+  const chain: Record<string, jest.Mock> = {
     select:  jest.fn().mockReturnThis(),
     order:   jest.fn().mockReturnThis(),
     limit:   jest.fn().mockResolvedValue(result),
     update:  jest.fn().mockReturnThis(),
     eq:      jest.fn().mockResolvedValue({ error: null }),
+    // .in() used by the predictions count query for stale matches
+    in:      jest.fn().mockResolvedValue({ data: predictionRows, error: null }),
   };
   // Make update().eq() work
   chain.update.mockReturnValue({ eq: chain.eq });

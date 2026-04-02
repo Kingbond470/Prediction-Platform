@@ -184,6 +184,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "user_id required" }, { status: 400 });
     }
 
+    // Auth check: cookie must match the requested user_id (prevents IDOR)
+    const cookieUserId = request.cookies.get("uid")?.value;
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && cookieUserId !== userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
       // Return in-memory mock predictions for this user
       const userPreds = Array.from(mockPredictions.entries())

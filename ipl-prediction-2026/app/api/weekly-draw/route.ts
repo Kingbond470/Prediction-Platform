@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getCurrentWeekNumber, getWeekDateRange } from "@/lib/weekUtils";
+import { timingSafeEqual } from "crypto";
 
 const WINNERS_PER_WEEK = 10;
 const MIGRATION_ERROR_CODES = new Set(["42703", "42P01", "PGRST205", "PGRST204"]);
@@ -25,7 +26,12 @@ function isMigrationError(err: unknown): boolean {
  */
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-admin-secret");
-  if (!secret || secret !== process.env.ADMIN_SECRET) {
+  const envSecret = process.env.ADMIN_SECRET;
+  let authorized = false;
+  try {
+    authorized = !!secret && !!envSecret && timingSafeEqual(Buffer.from(secret), Buffer.from(envSecret));
+  } catch { authorized = false; }
+  if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

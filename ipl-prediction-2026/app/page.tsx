@@ -253,11 +253,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── IPL Champion Odds ────────────────────────────────────── */}
-      <section className="mb-2">
-        <TournamentOdds />
-      </section>
-
       {/* ── Matches ──────────────────────────────────────────────── */}
       <section id="matches" className="mb-14">
         <div className="flex items-center justify-between mb-5">
@@ -273,6 +268,11 @@ export default async function HomePage() {
         <Suspense fallback={<div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-64 rounded-2xl shimmer-bg" />)}</div>}>
           <HomeClient initialMatches={matches} />
         </Suspense>
+      </section>
+
+      {/* ── IPL Champion Odds (below match list for better flow) ─── */}
+      <section className="mb-14">
+        <TournamentOdds />
       </section>
 
       {/* ── How It Works ─────────────────────────────────────────── */}

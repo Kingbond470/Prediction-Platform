@@ -134,7 +134,7 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
         <div className="mb-5">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide">Community Pulse</span>
-            <span className="text-xs text-gray-600">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/[0.05] text-gray-400">
               {(match.initial_count_team_1 + match.initial_count_team_2).toLocaleString("en-IN")} voted
             </span>
           </div>

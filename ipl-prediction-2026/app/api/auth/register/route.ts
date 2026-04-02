@@ -4,6 +4,18 @@ import { TEAM_CONFIG } from "@/app/lib/teams";
 
 const VALID_TEAMS = new Set(Object.keys(TEAM_CONFIG));
 
+// ── Simple in-memory rate limiter (5 attempts / IP / 60s) ────────────────────
+const rateLimitMap = new Map<string, number[]>();
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const window = 60_000; // 1 minute
+  const max = 5;
+  const hits = (rateLimitMap.get(ip) ?? []).filter((t) => now - t < window);
+  hits.push(now);
+  rateLimitMap.set(ip, hits);
+  return hits.length > max;
+}
+
 // ── Session cookie helper ─────────────────────────────────────────────────────
 function setSessionCookie(res: NextResponse, userId: string): NextResponse {
   res.cookies.set("uid", userId, {
@@ -69,6 +81,11 @@ function stableUuidFromPhone(phone: string): string {
 
 // ── POST /api/auth/register ───────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (isRateLimited(ip)) {
+    return NextResponse.json({ error: "Too many attempts. Try again in a minute." }, { status: 429 });
+  }
+
   try {
     const body = await request.json();
     const { phone, name, username, city, favorite_team } = body as {

@@ -1,13 +1,18 @@
 import { supabase } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
 import { POINTS_CORRECT, POINTS_UNDERDOG, POINTS_BEAT_AI } from "@/app/lib/scoring";
+import { timingSafeEqual } from "crypto";
 
-// Simple secret check — set ADMIN_SECRET env var on Vercel
+// Constant-time secret check — prevents timing side-channel brute force
 function isAuthorized(request: NextRequest): boolean {
   const secret = request.headers.get("x-admin-secret");
   const envSecret = process.env.ADMIN_SECRET;
-  if (!envSecret) return false; // no secret configured → DENY ALL (must be set explicitly)
-  return secret === envSecret;
+  if (!envSecret || !secret) return false;
+  try {
+    return timingSafeEqual(Buffer.from(secret), Buffer.from(envSecret));
+  } catch {
+    return false; // buffers differ in length → not equal
+  }
 }
 
 export async function POST(request: NextRequest) {

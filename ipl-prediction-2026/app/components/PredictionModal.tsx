@@ -5,7 +5,7 @@ import { Match } from "@/lib/supabase";
 import { Button } from "./Button";
 import { TeamBadge } from "./TeamBadge";
 import { getTeamConfig } from "@/app/lib/teams";
-import { getMLPrediction, computeHybridProb, getConfidenceTier, CONFIDENCE_LABELS } from "@/lib/mlPredictions";
+import { computeHybridProb } from "@/lib/mlPredictions";
 
 interface PredictionModalProps {
   isOpen: boolean;
@@ -41,17 +41,20 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
   const selectedConfig = selectedTeam ? getTeamConfig(selectedTeam) : null;
 
   // ── AI Analysis data ──────────────────────────────────────────────────────
-  const mlPred = getMLPrediction(match.match_number);
-  const mlProb1 = mlPred ? mlPred.probTeam1 : match.team_1_probability / 100;
-  const mlProb2 = 1 - mlProb1;
+  // Primary signal: bookmaker consensus odds from The Odds API (stored on each match)
+  const oddsProb1 = match.team_1_probability / 100;
+  // Secondary signal: fan vote distribution from seeded initial counts
   const totalSeeded = match.initial_count_team_1 + match.initial_count_team_2;
   const crowdPct1 = totalSeeded > 0 ? match.initial_count_team_1 / totalSeeded : 0.5;
   const crowdPct2 = 1 - crowdPct1;
-  const hybridProb1 = computeHybridProb(mlProb1, crowdPct1);
+  // Hybrid: 60% bookmaker odds + 40% fan votes
+  const hybridProb1 = computeHybridProb(oddsProb1, crowdPct1);
   const aiPick = hybridProb1 >= 0.5 ? match.team_1 : match.team_2;
   const aiPickConfig = getTeamConfig(aiPick);
-  const confidenceTier = mlPred ? getConfidenceTier(mlPred.confidence) : "medium";
-  const confidenceLabel = CONFIDENCE_LABELS[confidenceTier];
+  // Confidence derived from how far apart the bookmaker odds are
+  const oddsGap = Math.abs(match.team_1_probability - match.team_2_probability);
+  const confidenceTier = oddsGap >= 30 ? "high" : oddsGap >= 12 ? "medium" : "low";
+  const confidenceLabel = confidenceTier === "high" ? "🎯 Clear Favourite" : confidenceTier === "medium" ? "📊 Likely" : "⚖️ Toss-up";
 
   const handleVote = async () => {
     if (!selectedTeam) return;
@@ -239,28 +242,28 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
             </div>
 
             <div className="px-4 py-3 space-y-2.5">
-              {/* ML Model bar (Form 30% + H2H 30% = 60%) */}
+              {/* Bookmaker Odds bar (60% weight) */}
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-400">📊 ML Model <span className="text-gray-600">(Form + H2H · 60%)</span></span>
-                  <span className="font-semibold" style={{ color: mlProb1 >= 0.5 ? team1.color : team2.color }}>
-                    {mlProb1 >= 0.5 ? match.team_1 : match.team_2} {Math.round(Math.max(mlProb1, mlProb2) * 100)}%
+                  <span className="text-gray-400">📊 Bookmaker Odds <span className="text-gray-600">(60%)</span></span>
+                  <span className="font-semibold" style={{ color: oddsProb1 >= 0.5 ? team1.color : team2.color }}>
+                    {oddsProb1 >= 0.5 ? match.team_1 : match.team_2} {Math.max(match.team_1_probability, match.team_2_probability)}%
                   </span>
                 </div>
                 <div className="h-1.5 w-full rounded-full overflow-hidden bg-white/[0.06] flex">
-                  <div className="h-full rounded-l-full" style={{ width: `${mlProb1 * 100}%`, background: team1.color, opacity: 0.85 }} />
+                  <div className="h-full rounded-l-full" style={{ width: `${oddsProb1 * 100}%`, background: team1.color, opacity: 0.85 }} />
                   <div className="h-full flex-1 rounded-r-full" style={{ background: team2.color, opacity: 0.85 }} />
                 </div>
                 <div className="flex justify-between mt-1">
-                  <span className="text-[10px] font-medium" style={{ color: team1.color }}>{match.team_1} {Math.round(mlProb1 * 100)}%</span>
-                  <span className="text-[10px] font-medium" style={{ color: team2.color }}>{Math.round(mlProb2 * 100)}% {match.team_2}</span>
+                  <span className="text-[10px] font-medium" style={{ color: team1.color }}>{match.team_1} {match.team_1_probability}%</span>
+                  <span className="text-[10px] font-medium" style={{ color: team2.color }}>{match.team_2_probability}% {match.team_2}</span>
                 </div>
               </div>
 
               {/* Community bar (40%) */}
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-400">👥 Community <span className="text-gray-600">(40%)</span></span>
+                  <span className="text-gray-400">👥 Fan Predictions <span className="text-gray-600">(40%)</span></span>
                   <span className="font-semibold" style={{ color: crowdPct1 >= 0.5 ? team1.color : team2.color }}>
                     {crowdPct1 >= 0.5 ? match.team_1 : match.team_2} {Math.round(Math.max(crowdPct1, crowdPct2) * 100)}%
                   </span>

@@ -6,7 +6,6 @@ import { TeamBadge } from "./TeamBadge";
 import { CountdownTimer } from "./CountdownTimer";
 import { getTeamConfig } from "@/app/lib/teams";
 import { matchToSlug } from "@/lib/matchSlug";
-import { getMLPrediction, getConfidenceTier } from "@/lib/mlPredictions";
 
 interface MatchCardProps {
   match: Match;
@@ -24,8 +23,8 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
   const isHot =
     match.team_1_probability >= 40 && match.team_1_probability <= 60;
 
-  const mlPred = getMLPrediction(match.match_number);
-  const confidenceTier = mlPred ? getConfidenceTier(mlPred.confidence) : null;
+  const oddsGap = Math.abs(match.team_1_probability - match.team_2_probability);
+  const confidenceTier = oddsGap >= 30 ? "high" : oddsGap >= 12 ? "medium" : "low";
 
   const totalSeeded =
     match.initial_count_team_1 + match.initial_count_team_2;

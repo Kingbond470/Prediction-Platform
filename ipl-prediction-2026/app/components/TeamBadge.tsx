@@ -4,12 +4,13 @@ import { getTeamConfig } from "@/app/lib/teams";
 
 interface TeamBadgeProps {
   team: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   showName?: boolean;
   className?: string;
 }
 
 const SIZES = {
+  xs:  { outer: "w-7 h-7 text-base",  text: "text-[10px] mt-0.5" },
   sm:  { outer: "w-10 h-10 text-lg",  text: "text-xs mt-1" },
   md:  { outer: "w-14 h-14 text-2xl", text: "text-xs mt-1.5" },
   lg:  { outer: "w-20 h-20 text-3xl", text: "text-sm mt-2 font-bold" },

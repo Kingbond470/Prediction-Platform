@@ -6,6 +6,7 @@ import { Match } from "@/lib/supabase";
 import { MatchCard } from "./MatchCard";
 import { ResultMatchCard } from "./ResultMatchCard";
 import { PredictionModal } from "./PredictionModal";
+import { getTeamConfig } from "@/app/lib/teams";
 import posthog from "posthog-js";
 
 interface HomeClientProps {
@@ -22,6 +23,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("upcoming");
   const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
   const [showWelcome, setShowWelcome] = useState(false);
+  const [favTeam, setFavTeam] = useState<string | null>(null);
 
   const now = new Date();
 
@@ -36,6 +38,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     setUserId(storedUserId);
+    setFavTeam(localStorage.getItem("favoriteTeam"));
 
     if (storedUserId) {
       // Show welcome banner once after signup
@@ -137,6 +140,13 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
     activeTab === "upcoming" ? upcomingMatches :
     resultMatches;
 
+  const favTeamCfg = favTeam ? getTeamConfig(favTeam) : null;
+  const favTeamNextMatch = favTeam
+    ? upcomingMatches.find(
+        (m) => (m.team_1 === favTeam || m.team_2 === favTeam) && !votedMatchIds.has(m.id)
+      ) ?? null
+    : null;
+
   return (
     <>
       {/* Welcome banner — shown once after signup */}
@@ -152,6 +162,41 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           </div>
           <button onClick={() => setShowWelcome(false)} className="text-gray-500 hover:text-white transition-smooth shrink-0 text-lg">✕</button>
         </div>
+      )}
+
+      {/* Favourite team next match — personalised nudge */}
+      {favTeamCfg && favTeamNextMatch && activeTab === "upcoming" && (
+        <button
+          onClick={() => handlePredict(favTeamNextMatch)}
+          className="w-full text-left mb-4 p-4 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
+          style={{
+            background: `linear-gradient(135deg, ${favTeamCfg.color}18, ${favTeamCfg.color}06)`,
+            border: `1px solid ${favTeamCfg.color}35`,
+          }}
+        >
+          <p className="text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: favTeamCfg.color }}>
+            {favTeamCfg.emoji} Your team&apos;s next match
+          </p>
+          <p className="font-display font-black text-white text-lg leading-tight">
+            {favTeamNextMatch.team_1}{" "}
+            <span className="text-gray-500 font-normal text-base">vs</span>{" "}
+            {favTeamNextMatch.team_2}
+          </p>
+          <div className="flex items-center justify-between mt-2.5">
+            <span className="text-xs text-gray-400">
+              📍 {favTeamNextMatch.city} ·{" "}
+              {new Date(favTeamNextMatch.match_date).toLocaleString("en-IN", {
+                day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+              })}
+            </span>
+            <span
+              className="text-xs font-bold px-3 py-1 rounded-full shrink-0"
+              style={{ background: favTeamCfg.color, color: "#000" }}
+            >
+              Predict Now →
+            </span>
+          </div>
+        </button>
       )}
 
       {/* Tab bar */}

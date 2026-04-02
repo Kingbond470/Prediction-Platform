@@ -13,10 +13,13 @@ interface LeaderboardEntry {
   beat_ai_count: number;
   win_percentage: number;
   rank: number;
+  current_streak?: number;
+  max_streak?: number;
 }
 
 export default function LeaderboardContent() {
   const router = useRouter();
+  const [period, setPeriod] = useState<"alltime" | "weekly">("alltime");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<LeaderboardEntry | null>(null);
   const [totalPlayers, setTotalPlayers] = useState<number>(0);
@@ -34,7 +37,10 @@ export default function LeaderboardContent() {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {
-      const res = await fetch(`/api/leaderboard${userId ? `?user_id=${userId}` : ""}`);
+      const params = new URLSearchParams();
+      if (userId) params.set("user_id", userId);
+      if (period === "weekly") params.set("period", "weekly");
+      const res = await fetch(`/api/leaderboard?${params.toString()}`);
       const d = await res.json();
       setLeaderboard(d.top_10 || []);
       setUserRank(d.user_rank || null);
@@ -47,7 +53,7 @@ export default function LeaderboardContent() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [userId]);
+  }, [userId, period]);
 
   // Initial load
   useEffect(() => { fetchLeaderboard(false); }, [fetchLeaderboard]);
@@ -132,6 +138,9 @@ export default function LeaderboardContent() {
                   {userRank.beat_ai_count > 0 && (
                     <span className="text-xs text-blue-400 font-semibold">🤖 beat AI {userRank.beat_ai_count}×</span>
                   )}
+                  {(userRank.current_streak ?? 0) >= 2 && (
+                    <span className="text-xs text-orange-400 font-semibold">🔥 {userRank.current_streak} streak</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -157,7 +166,21 @@ export default function LeaderboardContent() {
       {/* ── Full rankings ────────────────────────────────────────── */}
       <div className="rounded-2xl glass p-5">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display font-bold text-white">Full Rankings</h2>
+          <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+            {(["alltime", "weekly"] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                  period === p
+                    ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                {p === "alltime" ? "🏆 All Time" : "📅 This Week"}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center gap-3">
             {updatedLabel && (
               <span className="text-xs text-gray-600">Updated {updatedLabel}</span>
@@ -179,9 +202,15 @@ export default function LeaderboardContent() {
 
         {leaderboard.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-5xl mb-3 animate-float inline-block">🏆</div>
-            <p className="text-white font-semibold mb-1">No rankings yet</p>
-            <p className="text-gray-500 text-sm">Make your first prediction to appear here!</p>
+            <div className="text-5xl mb-3 animate-float inline-block">{period === "weekly" ? "📅" : "🏆"}</div>
+            <p className="text-white font-semibold mb-1">
+              {period === "weekly" ? "No scored predictions this week yet" : "No rankings yet"}
+            </p>
+            <p className="text-gray-500 text-sm">
+              {period === "weekly"
+                ? "Rankings reset every Monday — check back after a match result is posted"
+                : "Make your first prediction to appear here!"}
+            </p>
           </div>
         ) : (
           <div className="space-y-2">

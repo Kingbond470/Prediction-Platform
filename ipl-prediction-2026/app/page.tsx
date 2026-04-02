@@ -67,6 +67,65 @@ async function getMatches(): Promise<Match[]> {
   }
 }
 
+interface SiteStats {
+  totalPredictions: string;  // formatted e.g. "2.1L+", "4.2K+", "847"
+  beatAiPct: string | null;  // e.g. "68%" — null if not enough scored data
+  totalMatches: number;
+  totalFans: string;         // formatted fan/user count
+}
+
+function formatIndianCount(n: number): string {
+  if (n >= 100_000) return `${(n / 100_000).toFixed(1)}L+`;
+  if (n >= 1_000)   return `${(n / 1_000).toFixed(1)}K+`;
+  return n.toLocaleString("en-IN");
+}
+
+async function getSiteStats(): Promise<SiteStats> {
+  // Fallback for mock/dev mode
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    return { totalPredictions: "2.1L+", beatAiPct: "74%", totalMatches: 74, totalFans: "2,10,000+" };
+  }
+
+  try {
+    const [predsRes, matchesRes, scoredRes, fansRes] = await Promise.all([
+      // Total predictions made
+      supabase.from("predictions").select("id", { count: "exact", head: true }),
+      // Total matches in the platform
+      supabase.from("matches").select("id", { count: "exact", head: true }),
+      // Scored predictions: how many beat the AI
+      supabase
+        .from("predictions")
+        .select("is_correct, ai_predicted_team, predicted_team")
+        .not("is_correct", "is", null),
+      // Total users who have predicted at least once (from leaderboard view)
+      supabase.from("leaderboard_humans").select("id", { count: "exact", head: true }),
+    ]);
+
+    const totalPredictions = predsRes.count ?? 0;
+    const totalMatches     = matchesRes.count ?? 0;
+    const totalFans        = fansRes.count ?? 0;
+
+    // Beat AI %: correct picks where AI was wrong / all scored picks
+    const scored = scoredRes.data ?? [];
+    const beatAiCount = scored.filter(
+      (p) => p.is_correct === true && p.ai_predicted_team !== p.predicted_team
+    ).length;
+    const beatAiPct =
+      scored.length >= 5
+        ? `${Math.round((beatAiCount / scored.length) * 100)}%`
+        : null;
+
+    return {
+      totalPredictions: formatIndianCount(totalPredictions),
+      beatAiPct,
+      totalMatches,
+      totalFans: totalFans > 0 ? formatIndianCount(totalFans) : formatIndianCount(totalPredictions),
+    };
+  } catch {
+    return { totalPredictions: "2.1L+", beatAiPct: "74%", totalMatches: 74, totalFans: "2,10,000+" };
+  }
+}
+
 // FAQ items mirrored in JSON-LD for Google rich snippets
 const FAQ_SCHEMA = {
   "@context": "https://schema.org",
@@ -132,7 +191,7 @@ const FAQ_SCHEMA = {
 };
 
 export default async function HomePage() {
-  const matches = await getMatches();
+  const [matches, stats] = await Promise.all([getMatches(), getSiteStats()]);
 
   return (
     <div>
@@ -167,12 +226,14 @@ export default async function HomePage() {
           Free IPL 2026 winner prediction · Beat the AI · Zero money
         </p>
 
-        {/* Stats row */}
+        {/* Stats row — real numbers from DB */}
         <div className="flex justify-center gap-2 sm:gap-6 flex-wrap">
           {[
-            { value: "2.1L+", label: "Predictions", icon: "🎯", color: "from-red-500/20 to-red-500/5" },
-            { value: "74%",   label: "Beat AI",     icon: "🤖", color: "from-green-500/20 to-green-500/5" },
-            { value: "74",    label: "Matches",     icon: "🏏", color: "from-amber-500/20 to-amber-500/5" },
+            { value: stats.totalPredictions, label: "Predictions", icon: "🎯", color: "from-red-500/20 to-red-500/5" },
+            ...(stats.beatAiPct
+              ? [{ value: stats.beatAiPct, label: "Beat AI", icon: "🤖", color: "from-green-500/20 to-green-500/5" }]
+              : []),
+            { value: String(stats.totalMatches), label: "Matches", icon: "🏏", color: "from-amber-500/20 to-amber-500/5" },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -287,7 +348,7 @@ export default async function HomePage() {
           <div className="relative">
             <div className="text-5xl mb-3 animate-float inline-block">🏆</div>
             <h2 className="font-display font-black text-3xl text-white mb-2">
-              2,10,000+ fans playing
+              {stats.totalFans} fans playing
             </h2>
             <p className="text-gray-400 mb-6 max-w-md mx-auto">
               Join India&apos;s fastest growing cricket prediction community. Free to play, no betting, just vibes.

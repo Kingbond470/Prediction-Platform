@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
-import { fetchIPLOdds } from "@/app/lib/oddsApi";
+import { fetchIPLOdds, fetchIPLScores } from "@/app/lib/oddsApi";
+import { scoreMatch } from "@/lib/scoreMatch";
 
 // Never cache — matches update frequently (live odds, stale date refresh)
 export const dynamic = "force-dynamic";
@@ -84,7 +85,47 @@ export async function GET() {
       }
     }
 
-    // Step 2b: Fetch from Supabase — two queries to ensure completed matches
+    // Step 2b: Sync completed scores — auto-complete matches the Odds API says are done
+    if (hasOddsKey) {
+      try {
+        const completedScores = await fetchIPLScores(3);
+        for (const cs of completedScores) {
+          // Find the Supabase match by odds event ID or by team pair
+          const { data: byOddsId } = await supabase
+            .from("matches")
+            .select("id, status, team_1, team_2")
+            .eq("odds_event_id", cs.oddsId)
+            .maybeSingle();
+
+          const { data: byTeams } = byOddsId ? { data: null } : await supabase
+            .from("matches")
+            .select("id, status, team_1, team_2")
+            .or(
+              `and(team_1.eq.${cs.team1ShortCode},team_2.eq.${cs.team2ShortCode}),` +
+              `and(team_1.eq.${cs.team2ShortCode},team_2.eq.${cs.team1ShortCode})`
+            )
+            .maybeSingle();
+
+          const match = byOddsId || byTeams;
+          if (!match || match.status === "completed") continue;
+
+          // winner from scores API is a short code; make sure it matches our team fields
+          const winner = match.team_1 === cs.winner ? match.team_1 : match.team_2;
+          if (!winner) continue;
+
+          try {
+            await scoreMatch(match.id, winner);
+            console.log(`[auto-score] ${match.team_1} vs ${match.team_2} → winner: ${winner}`);
+          } catch (e) {
+            console.error(`[auto-score] failed for ${match.id}:`, e);
+          }
+        }
+      } catch (err) {
+        console.warn("[auto-score] scores sync failed:", err);
+      }
+    }
+
+    // Step 2d: Fetch from Supabase — two queries to ensure completed matches
     // are never dropped by a date-ordered limit.
     const [upcomingRes, completedRes] = await Promise.all([
       supabase
@@ -112,7 +153,7 @@ export async function GET() {
     const liveMatches = allMatches;
 
 
-    // Step 2c: Mark any upcoming matches whose date has passed as "live"
+    // Step 2e: Mark any upcoming matches whose date has passed as "live"
     // so they stay visible until admin enters results. Never push dates forward —
     // that would cause real past matches to disappear from the schedule.
     const staleMatches = liveMatches.filter(

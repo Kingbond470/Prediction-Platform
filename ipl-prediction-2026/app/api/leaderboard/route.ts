@@ -5,14 +5,22 @@ export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get("user_id");
 
-    // Get top 50
-    const { data: top10 } = await supabase
-      .from("leaderboard_humans")
-      .select("*")
-      .order("rank", { ascending: true })
-      .limit(50);
+    // Run both queries in parallel
+    const [rankingsRes, countRes] = await Promise.all([
+      supabase
+        .from("leaderboard_humans")
+        .select("*")
+        .order("rank", { ascending: true })
+        .limit(50),
+      supabase
+        .from("leaderboard_humans")
+        .select("id", { count: "exact", head: true }),
+    ]);
 
-    // Get user's rank
+    const rankings = rankingsRes.data || [];
+    const totalPlayers = countRes.count ?? rankings.length;
+
+    // Get the requesting user's own rank (may be outside top 50)
     let userRank = null;
     if (userId) {
       const { data: user } = await supabase
@@ -20,14 +28,14 @@ export async function GET(request: NextRequest) {
         .select("*")
         .eq("id", userId)
         .single();
-
       userRank = user;
     }
 
     return NextResponse.json({
       success: true,
-      top_10: top10 || [],
+      top_10: rankings,       // keeping key name for backward compat
       user_rank: userRank,
+      total_players: totalPlayers,
     });
   } catch {
     return NextResponse.json(

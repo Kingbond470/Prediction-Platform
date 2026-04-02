@@ -146,7 +146,7 @@ describe("GET /api/matches", () => {
     expect(json.error).toBe("DB connection failed");
   });
 
-  it("marks stale seed matches (0 predictions) as live", async () => {
+  it("marks stale upcoming matches as live (never pushes dates forward)", async () => {
     const staleMatch = { ...MOCK_MATCH, match_date: PAST_DATE, status: "upcoming" };
     const { matchChain } = setupMocks({
       upcomingData: [staleMatch],
@@ -157,6 +157,9 @@ describe("GET /api/matches", () => {
     const json = await res.json();
 
     expect(res.status).toBe(200);
+    // Date must NOT be pushed forward — match stays at its real date
+    expect(new Date(json.matches[0].match_date).getTime()).toBe(new Date(PAST_DATE).getTime());
+    // Status must be flipped to "live"
     expect(json.matches[0].status).toBe("live");
     expect(matchChain.update).toHaveBeenCalled();
   });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getTeamConfig } from "@/app/lib/teams";
 
@@ -10,6 +10,7 @@ interface LeaderboardEntry {
   total_points: number;
   total_predictions: number;
   total_correct: number;
+  beat_ai_count: number;
   win_percentage: number;
   rank: number;
 }
@@ -18,23 +19,64 @@ export default function LeaderboardContent() {
   const router = useRouter();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<LeaderboardEntry | null>(null);
+  const [totalPlayers, setTotalPlayers] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [secondsAgo, setSecondsAgo] = useState(0);
 
   const userId   = typeof window !== "undefined" ? localStorage.getItem("userId")   : null;
   const username = typeof window !== "undefined" ? localStorage.getItem("username") : null;
   const favTeam  = typeof window !== "undefined" ? localStorage.getItem("favoriteTeam") : null;
   const teamCfg  = favTeam ? getTeamConfig(favTeam) : null;
 
-  useEffect(() => {
-    fetch(`/api/leaderboard${userId ? `?user_id=${userId}` : ""}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setLeaderboard(d.top_10 || []);
-        setUserRank(d.user_rank || null);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+  const fetchLeaderboard = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
+    try {
+      const res = await fetch(`/api/leaderboard${userId ? `?user_id=${userId}` : ""}`);
+      const d = await res.json();
+      setLeaderboard(d.top_10 || []);
+      setUserRank(d.user_rank || null);
+      setTotalPlayers(d.total_players || 0);
+      setLastUpdated(new Date());
+      setSecondsAgo(0);
+    } catch {
+      // keep stale data on error
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [userId]);
+
+  // Initial load
+  useEffect(() => { fetchLeaderboard(false); }, [fetchLeaderboard]);
+
+  // Auto-refresh every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => fetchLeaderboard(true), 60_000);
+    return () => clearInterval(interval);
+  }, [fetchLeaderboard]);
+
+  // "Updated X seconds ago" ticker
+  useEffect(() => {
+    if (!lastUpdated) return;
+    const ticker = setInterval(() => {
+      setSecondsAgo(Math.floor((Date.now() - lastUpdated.getTime()) / 1000));
+    }, 5_000);
+    return () => clearInterval(ticker);
+  }, [lastUpdated]);
+
+  const updatedLabel = !lastUpdated
+    ? ""
+    : secondsAgo < 10
+    ? "just now"
+    : secondsAgo < 60
+    ? `${secondsAgo}s ago`
+    : `${Math.floor(secondsAgo / 60)}m ago`;
+
+  // True if the current user is already visible in the top-50 list
+  const userInList = !!leaderboard.find((u) => u.username === username);
 
   if (loading) {
     return (
@@ -48,50 +90,91 @@ export default function LeaderboardContent() {
   return (
     <div className="max-w-2xl mx-auto py-6 space-y-5 animate-slide-up">
 
-      {/* Header */}
+      {/* ── Header ──────────────────────────────────────────────── */}
       <div className="text-center">
-        <div className="inline-flex w-16 h-16 rounded-2xl items-center justify-center text-3xl mb-4"
+        <div
+          className="inline-flex w-16 h-16 rounded-2xl items-center justify-center text-3xl mb-4"
           style={{
             background: "linear-gradient(135deg, #F59E0B, #D97706)",
             boxShadow: "0 0 32px rgba(245,158,11,0.4)",
-          }}>
+          }}
+        >
           🏆
         </div>
         <h1 className="font-display font-black text-3xl text-white">IPL 2026 Leaderboard</h1>
-        <p className="text-gray-500 text-sm mt-1">Top fans competing against the AI</p>
+        <p className="text-gray-500 text-sm mt-1">
+          {totalPlayers > 0
+            ? `${totalPlayers.toLocaleString("en-IN")} fans competing against the AI`
+            : "Top fans competing against the AI"}
+        </p>
       </div>
 
-      {/* User's own rank card — shown at top if ranked */}
-      {userRank && (
-        <div className="rounded-2xl p-4"
+      {/* ── Your Standing card ──────────────────────────────────── */}
+      {userRank ? (
+        <div
+          className="rounded-2xl p-4"
           style={{
             background: `linear-gradient(135deg, rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.15), rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.05))`,
             border: `1px solid rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.3)`,
-          }}>
+          }}
+        >
           <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: "var(--tc,#EF4444)" }}>
             {teamCfg ? `${teamCfg.emoji} ` : ""}Your Standing
           </p>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="font-display font-black text-4xl text-white">#{userRank.rank}</span>
-              <div>
-                <p className="font-semibold text-white">{userRank.username}</p>
-                <p className="text-xs text-gray-400">{userRank.total_predictions} predictions · {userRank.win_percentage}% accuracy</p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="font-display font-black text-4xl text-white shrink-0">#{userRank.rank}</span>
+              <div className="min-w-0">
+                <p className="font-semibold text-white truncate">{userRank.username}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                  <span className="text-xs text-gray-400">{userRank.total_predictions} picks</span>
+                  <span className="text-xs text-gray-400">{userRank.win_percentage}% accuracy</span>
+                  {userRank.beat_ai_count > 0 && (
+                    <span className="text-xs text-blue-400 font-semibold">🤖 beat AI {userRank.beat_ai_count}×</span>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="font-display font-black text-3xl text-gradient">{userRank.total_points}</p>
+            <div className="text-right shrink-0">
+              <p className="font-display font-black text-3xl text-gradient">{userRank.total_points.toLocaleString("en-IN")}</p>
               <p className="text-xs text-gray-500">points</p>
             </div>
           </div>
         </div>
-      )}
+      ) : userId ? (
+        <div className="rounded-2xl glass p-4 text-center">
+          <p className="text-gray-400 text-sm">Make your first prediction to appear on the leaderboard!</p>
+          <button
+            onClick={() => router.push("/")}
+            className="mt-3 text-xs font-semibold px-4 py-2 rounded-lg transition-smooth"
+            style={{ background: "rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.15)", color: "var(--tc,#EF4444)" }}
+          >
+            Browse Matches →
+          </button>
+        </div>
+      ) : null}
 
-      {/* Full rankings */}
+      {/* ── Full rankings ────────────────────────────────────────── */}
       <div className="rounded-2xl glass p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display font-bold text-white">Full Rankings</h2>
-          <span className="text-xs text-gray-500">{leaderboard.length} players ranked</span>
+          <div className="flex items-center gap-3">
+            {updatedLabel && (
+              <span className="text-xs text-gray-600">Updated {updatedLabel}</span>
+            )}
+            <button
+              onClick={() => fetchLeaderboard(true)}
+              disabled={refreshing}
+              className="text-xs text-gray-400 hover:text-white transition-smooth disabled:opacity-40"
+              title="Refresh"
+            >
+              {refreshing ? (
+                <span className="inline-block w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                "↻ Refresh"
+              )}
+            </button>
+          </div>
         </div>
 
         {leaderboard.length === 0 ? (
@@ -102,47 +185,21 @@ export default function LeaderboardContent() {
           </div>
         ) : (
           <div className="space-y-2">
-            {leaderboard.map((user, idx) => {
-              const isMe = user.username === username;
-              const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : null;
-              return (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-3.5 rounded-xl transition-smooth border"
-                  style={{
-                    background: isMe
-                      ? `linear-gradient(135deg, rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.1), rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.04))`
-                      : "rgba(255,255,255,0.03)",
-                    borderColor: isMe
-                      ? `rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.3)`
-                      : "rgba(255,255,255,0.04)",
-                  }}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className={`w-7 shrink-0 text-center ${medal ? "text-base" : "text-xs font-bold text-gray-500"}`}>
-                      {medal ?? `#${idx + 1}`}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm truncate"
-                        style={isMe ? { color: "var(--tc,#EF4444)" } : { color: "white" }}>
-                        {user.username}
-                        {isMe && <span className="text-xs text-gray-500 ml-1">(you)</span>}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {user.total_correct}/{user.total_predictions} correct · {user.win_percentage}%
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-display font-black text-base text-white">
-                      {user.total_points}
-                      <span className="text-xs text-gray-500 ml-0.5">pts</span>
-                    </p>
-                    <p className="text-xs text-gray-600">{user.total_predictions} pred</p>
-                  </div>
+            {leaderboard.map((user, idx) => (
+              <LeaderboardRow key={user.id} user={user} idx={idx} isMe={user.username === username} />
+            ))}
+
+            {/* Show user's row below separator if they're outside the top list */}
+            {userRank && !userInList && (
+              <>
+                <div className="flex items-center gap-2 py-1">
+                  <div className="flex-1 border-t border-white/[0.06]" />
+                  <span className="text-xs text-gray-600 font-bold">· · ·</span>
+                  <div className="flex-1 border-t border-white/[0.06]" />
                 </div>
-              );
-            })}
+                <LeaderboardRow user={userRank} idx={userRank.rank - 1} isMe={true} />
+              </>
+            )}
           </div>
         )}
       </div>
@@ -153,6 +210,62 @@ export default function LeaderboardContent() {
       >
         ← Back to Matches
       </button>
+    </div>
+  );
+}
+
+// ── Shared row component ──────────────────────────────────────────────────────
+function LeaderboardRow({
+  user,
+  idx,
+  isMe,
+}: {
+  user: LeaderboardEntry;
+  idx: number;
+  isMe: boolean;
+}) {
+  const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : null;
+
+  return (
+    <div
+      className="flex items-center justify-between p-3.5 rounded-xl transition-smooth border"
+      style={{
+        background: isMe
+          ? `linear-gradient(135deg, rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.1), rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.04))`
+          : "rgba(255,255,255,0.03)",
+        borderColor: isMe
+          ? `rgba(var(--tc-r,239),var(--tc-g,68),var(--tc-b,68),0.3)`
+          : "rgba(255,255,255,0.04)",
+      }}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <span className={`w-7 shrink-0 text-center ${medal ? "text-base" : "text-xs font-bold text-gray-500"}`}>
+          {medal ?? `#${idx + 1}`}
+        </span>
+        <div className="min-w-0">
+          <p
+            className="font-semibold text-sm truncate"
+            style={isMe ? { color: "var(--tc,#EF4444)" } : { color: "white" }}
+          >
+            {user.username}
+            {isMe && <span className="text-xs text-gray-500 ml-1">(you)</span>}
+          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-xs text-gray-500">
+              {user.total_correct}/{user.total_predictions} · {user.win_percentage}%
+            </span>
+            {user.beat_ai_count > 0 && (
+              <span className="text-xs text-blue-400/80 font-medium">🤖 {user.beat_ai_count}×</span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="text-right shrink-0">
+        <p className="font-display font-black text-base text-white">
+          {user.total_points.toLocaleString("en-IN")}
+          <span className="text-xs text-gray-500 ml-0.5">pts</span>
+        </p>
+      </div>
     </div>
   );
 }

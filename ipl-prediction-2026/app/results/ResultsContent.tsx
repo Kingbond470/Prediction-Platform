@@ -209,7 +209,7 @@ export default function ResultsContent() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-display font-black text-sm text-white">{user.total_predictions}<span className="text-xs text-gray-500 ml-0.5">pred</span></p>
+                      <p className="font-display font-black text-sm text-white">{user.total_points}<span className="text-xs text-gray-500 ml-0.5">pts</span></p>
                     </div>
                   </div>
                 );

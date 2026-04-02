@@ -10,7 +10,7 @@ interface LeaderboardEntry {
   total_points: number;
   total_predictions: number;
   total_correct: number;
-  beat_ai_count: number;
+  beat_ai_count?: number;
   win_percentage: number;
   rank: number;
   current_streak?: number;
@@ -135,7 +135,7 @@ export default function LeaderboardContent() {
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                   <span className="text-xs text-gray-400">{userRank.total_predictions} picks</span>
                   <span className="text-xs text-gray-400">{userRank.win_percentage}% accuracy</span>
-                  {userRank.beat_ai_count > 0 && (
+                  {(userRank.beat_ai_count ?? 0) > 0 && (
                     <span className="text-xs text-blue-400 font-semibold">🤖 beat AI {userRank.beat_ai_count}×</span>
                   )}
                   {(userRank.current_streak ?? 0) >= 2 && (
@@ -283,7 +283,7 @@ function LeaderboardRow({
             <span className="text-xs text-gray-500">
               {user.total_correct}/{user.total_predictions} · {user.win_percentage}%
             </span>
-            {user.beat_ai_count > 0 && (
+            {(user.beat_ai_count ?? 0) > 0 && (
               <span className="text-xs text-blue-400/80 font-medium">🤖 {user.beat_ai_count}×</span>
             )}
           </div>

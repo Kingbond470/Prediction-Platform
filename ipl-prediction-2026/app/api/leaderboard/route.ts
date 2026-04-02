@@ -62,7 +62,11 @@ export async function GET(request: NextRequest) {
         const userIdx = sorted.findIndex(([id]) => id === userId);
         if (userIdx >= 0) {
           const [uid, e] = sorted[userIdx];
-          const { data: u } = await supabase.from("users").select("username").eq("id", uid).single();
+          const { data: u } = await supabase
+            .from("users")
+            .select("username, current_streak, max_streak")
+            .eq("id", uid)
+            .single();
           userWeekRank = {
             id: uid,
             username: u?.username || "Unknown",
@@ -72,6 +76,8 @@ export async function GET(request: NextRequest) {
             beat_ai_count: e.beatAi,
             win_percentage: e.total > 0 ? Math.round((e.correct / e.total) * 100) : 0,
             rank: userIdx + 1,
+            current_streak: u?.current_streak ?? 0,
+            max_streak:     u?.max_streak ?? 0,
           };
         }
       }

@@ -77,9 +77,9 @@ export default function ResultsContent() {
             try {
               const countsRes = await fetch(`/api/predictions/counts?match_id=${matchId}`);
               const countsData = await countsRes.json();
-              if (countsData.team_1_count !== undefined) {
-                const t1 = foundMatch.initial_count_team_1 + (countsData.team_1_count || 0);
-                const t2 = foundMatch.initial_count_team_2 + (countsData.team_2_count || 0);
+              if (countsData.counts) {
+                const t1 = foundMatch.initial_count_team_1 + (countsData.counts.team_1 || 0);
+                const t2 = foundMatch.initial_count_team_2 + (countsData.counts.team_2 || 0);
                 setCounts({ team_1: t1, team_2: t2, total: t1 + t2 });
               }
             } catch {

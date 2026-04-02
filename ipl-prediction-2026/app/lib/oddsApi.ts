@@ -123,6 +123,64 @@ export async function fetchIPLScores(daysFrom = 3): Promise<CompletedMatch[]> {
     .filter((m): m is CompletedMatch => m !== null);
 }
 
+// ── Outrights / Tournament Winner ─────────────────────────────────────────────
+
+export interface OutrightTeam {
+  team: string;         // short code e.g. "CSK"
+  teamFullName: string; // as returned by Odds API
+  probability: number;  // 0–100, normalized to sum to 100
+}
+
+export async function fetchIPLOutrights(): Promise<OutrightTeam[]> {
+  const apiKey = process.env.ODDS_API_KEY;
+  if (!apiKey || apiKey === "YOUR_KEY_HERE") throw new Error("ODDS_API_KEY not configured");
+
+  // Outrights use a dedicated endpoint: /v4/sports/{sport}/outrights
+  const url =
+    `https://api.the-odds-api.com/v4/sports/cricket_ipl/outrights/` +
+    `?apiKey=${apiKey}&regions=uk&oddsFormat=decimal`;
+
+  const res = await fetch(url, { next: { revalidate: 3600 } }); // cache 1h
+  if (!res.ok) throw new Error(`Odds API outrights ${res.status}: ${await res.text()}`);
+
+  const events = await res.json();
+  if (!events?.length) return [];
+
+  // Aggregate raw implied probabilities across all bookmakers
+  const teamSums: Record<string, { sum: number; count: number; fullName: string }> = {};
+
+  for (const event of events) {
+    for (const bm of (event.bookmakers ?? [])) {
+      const mkt = (bm.markets ?? []).find((m: { key: string }) => m.key === "outrights");
+      if (!mkt) continue;
+      for (const outcome of (mkt.outcomes ?? [])) {
+        const prob = outcome.price > 0 ? 1 / outcome.price : 0;
+        if (!teamSums[outcome.name]) {
+          teamSums[outcome.name] = { sum: 0, count: 0, fullName: outcome.name };
+        }
+        teamSums[outcome.name].sum  += prob;
+        teamSums[outcome.name].count++;
+      }
+    }
+  }
+
+  const rawEntries = Object.entries(teamSums).map(([, s]) => ({
+    fullName: s.fullName,
+    avgProb:  s.count > 0 ? s.sum / s.count : 0,
+  }));
+  const total = rawEntries.reduce((acc, e) => acc + e.avgProb, 0);
+  if (total === 0) return [];
+
+  return rawEntries
+    .map((e) => ({
+      team:         toShortCode(e.fullName),
+      teamFullName: e.fullName,
+      probability:  Math.round((e.avgProb / total) * 100),
+    }))
+    .filter((t) => t.probability > 0)
+    .sort((a, b) => b.probability - a.probability);
+}
+
 export async function fetchIPLOdds(): Promise<OddsMatch[]> {
   const apiKey = process.env.ODDS_API_KEY;
   if (!apiKey || apiKey === "YOUR_KEY_HERE") throw new Error("ODDS_API_KEY not configured");

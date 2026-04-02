@@ -24,6 +24,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://iplprediction2026.in" },
 };
 
+const TournamentOdds = dynamic(() => import("./components/TournamentOdds"), {
+  ssr: false,
+  loading: () => <div className="h-48 rounded-2xl shimmer-bg mb-8" />,
+});
+
 const HomeClient = dynamic(() => import("./components/HomeClient"), {
   ssr: false,
   loading: () => (
@@ -185,6 +190,11 @@ export default async function HomePage() {
           <div className="w-0.5 h-6 rounded-full bg-white" />
           <div className="text-xs text-white">scroll</div>
         </div>
+      </section>
+
+      {/* ── IPL Champion Odds ────────────────────────────────────── */}
+      <section className="mb-2">
+        <TournamentOdds />
       </section>
 
       {/* ── Matches ──────────────────────────────────────────────── */}

@@ -6,6 +6,7 @@ import { TeamBadge } from "./TeamBadge";
 import { CountdownTimer } from "./CountdownTimer";
 import { getTeamConfig } from "@/app/lib/teams";
 import { matchToSlug } from "@/lib/matchSlug";
+import { getMLPrediction, getConfidenceTier } from "@/lib/mlPredictions";
 
 interface MatchCardProps {
   match: Match;
@@ -22,6 +23,9 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
 
   const isHot =
     match.team_1_probability >= 40 && match.team_1_probability <= 60;
+
+  const mlPred = getMLPrediction(match.match_number);
+  const confidenceTier = mlPred ? getConfidenceTier(mlPred.confidence) : null;
 
   const totalSeeded =
     match.initial_count_team_1 + match.initial_count_team_2;
@@ -56,13 +60,23 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
       <div className="relative p-5">
         {/* Header row */}
         <div className="flex justify-between items-center mb-5">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">
               Match #{match.match_number}
             </span>
             {isHot && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400">
                 🔥 HOT
+              </span>
+            )}
+            {confidenceTier === "high" && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/12 border border-emerald-500/25 text-emerald-400">
+                🎯 AI High Confidence
+              </span>
+            )}
+            {confidenceTier === "low" && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-500/12 border border-indigo-500/25 text-indigo-400">
+                ⚖️ Toss-up
               </span>
             )}
           </div>

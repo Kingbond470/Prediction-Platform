@@ -1,0 +1,155 @@
+data:
+  raw_matches: "data/raw/matches.csv"
+  raw_deliveries: "data/raw/deliveries.csv"
+  processed_matches: "data/processed/cleaned_matches.csv"
+  processed_deliveries: "data/processed/cleaned_deliveries.csv"
+  feature_matrix: "data/processed/feature_matrix.csv"
+  feature_matrix_v2: "data/processed/feature_matrix_v2.csv"
+  predictions_2026: "data/processed/predictions_2026.csv"
+  predictions_2026_advanced: "data/processed/predictions_2026_advanced.csv"
+  external_fixtures: "data/external/ipl_2026_fixtures.csv"
+  # Primary dataset: 2008-2024 coverage (most downloaded IPL dataset on Kaggle)
+  kaggle_dataset: "patrickb1912/ipl-complete-dataset-20082020"
+  kaggle_dataset_fallback: "mlummus/ipl-complete-dataset-2008-2021"
+
+features:
+  categorical_columns:
+    - "team1"
+    - "team2"
+    - "venue"
+    - "city"
+    - "toss_winner"
+    - "toss_decision"
+  numerical_columns:
+    - "team1_win_rate_last5"
+    - "team2_win_rate_last5"
+    - "team1_h2h_win_pct"
+    - "team2_h2h_win_pct"
+    - "team1_venue_win_rate"
+    - "team2_venue_win_rate"
+    - "toss_decision_encoded"
+    - "season_period_encoded"
+    - "day_of_week"
+  target: "winner_encoded"
+
+  # Validation strategy
+  validation_strategy: "temporal"
+  train_cutoff: "2021-12-31"
+  val_cutoff: "2023-12-31"
+  test_size: 0.2
+
+  # Feature engineering parameters (v1)
+  form_window: 5
+  h2h_window: 10
+  venue_window: 10
+
+  # Advanced feature engineering parameters (v2)
+  form_windows: [5, 10, 20]       # Multi-scale form analysis
+  h2h_windows: [5, 10, 20]
+  venue_windows: [5, 10, 20]
+  player_window: 20               # Last N matches for player stat aggregation
+  top_batters: 3                  # Top N batters per team (by recent avg)
+  top_bowlers: 3                  # Top N bowlers per team (by recent economy)
+  phase_powerplay_overs: [1, 6]
+  phase_middle_overs: [7, 15]
+  phase_death_overs: [16, 20]
+
+models:
+  random_state: 42
+  n_jobs: -1
+  handle_imbalance: "balanced"
+
+  logistic_regression:
+    C: 1.0
+    penalty: "l2"
+    max_iter: 1000
+    solver: "lbfgs"
+
+  random_forest:
+    n_estimators: 200
+    max_depth: 10
+    min_samples_split: 5
+    min_samples_leaf: 2
+
+  # Venue-specialist RF — fewer estimators, venue features dominate
+  random_forest_venue:
+    n_estimators: 300
+    max_depth: 12
+    min_samples_split: 4
+    min_samples_leaf: 2
+
+  xgboost:
+    n_estimators: 300
+    learning_rate: 0.05
+    max_depth: 6
+    subsample: 0.8
+    colsample_bytree: 0.8
+    use_label_encoder: false
+    eval_metric: "logloss"
+
+  # Advanced XGBoost — more trees for 500-feature space
+  xgboost_advanced:
+    n_estimators: 500
+    learning_rate: 0.03
+    max_depth: 7
+    subsample: 0.75
+    colsample_bytree: 0.6
+    min_child_weight: 3
+    gamma: 0.1
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+    use_label_encoder: false
+    eval_metric: "logloss"
+
+  # LSTM live-match model
+  lstm:
+    sequence_length: 30      # Last N balls as input
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.3
+    learning_rate: 0.001
+    epochs: 50
+    batch_size: 64
+    patience: 10             # Early stopping patience
+
+  # Meta-learner (stacking ensemble)
+  meta_learner:
+    C: 0.5
+    penalty: "l2"
+    max_iter: 500
+    # Weights for combining base model outputs in the meta-feature vector
+    # LSTM weight is applied when live match data is available
+    base_models: ["xgboost_advanced", "random_forest_venue"]
+    lstm_model: "lstm"       # Added when live data feed is wired
+
+paths:
+  models_dir: "models/trained"
+  scalers_dir: "models/scalers"
+  feature_importances_dir: "models/feature_importances"
+  plots_dir: "models/plots"
+  logs_dir: "logs"
+  # Advanced model artifacts
+  ensemble_dir: "models/ensemble"
+  lstm_dir: "models/lstm"
+
+training:
+  cv_folds: 5
+  scoring: "roc_auc"
+  save_best_only: true
+  early_stopping_rounds: 50
+
+prediction:
+  output_csv: "data/processed/predictions_2026.csv"
+  output_advanced_csv: "data/processed/predictions_2026_advanced.csv"
+  output_report: "docs/predictions_2026_report.md"
+  output_advanced_report: "docs/predictions_2026_advanced_report.md"
+  output_narratives: "data/processed/predictions_2026_narratives.json"
+
+narrative:
+  # Claude model for narrative generation
+  model: "claude-sonnet-4-6"
+  max_tokens: 250
+  # Fall back to template when ANTHROPIC_API_KEY is not set
+  fallback_to_template: true
+  # Cache narratives to avoid repeated API calls (saved in predictions_2026_narratives.json)
+  cache: true

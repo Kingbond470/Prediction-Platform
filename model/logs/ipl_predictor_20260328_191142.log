@@ -1,0 +1,21 @@
+2026-03-28 19:11:42 - src.feature_engineering - INFO - ==================================================
+2026-03-28 19:11:42 - src.feature_engineering - INFO - Building feature store
+2026-03-28 19:11:42 - src.feature_engineering - INFO - ==================================================
+2026-03-28 19:11:44 - src.feature_engineering - INFO - Processing match 50/630
+2026-03-28 19:11:46 - src.feature_engineering - INFO - Processing match 100/630
+2026-03-28 19:11:48 - src.feature_engineering - INFO - Processing match 150/630
+2026-03-28 19:11:51 - src.feature_engineering - INFO - Processing match 200/630
+2026-03-28 19:11:53 - src.feature_engineering - INFO - Processing match 250/630
+2026-03-28 19:11:56 - src.feature_engineering - INFO - Processing match 300/630
+2026-03-28 19:11:58 - src.feature_engineering - INFO - Processing match 350/630
+2026-03-28 19:12:01 - src.feature_engineering - INFO - Processing match 400/630
+2026-03-28 19:12:04 - src.feature_engineering - INFO - Processing match 450/630
+2026-03-28 19:12:06 - src.feature_engineering - INFO - Processing match 500/630
+2026-03-28 19:12:08 - src.feature_engineering - INFO - Processing match 550/630
+2026-03-28 19:12:11 - src.feature_engineering - INFO - Processing match 600/630
+2026-03-28 19:12:13 - src.feature_engineering - INFO - Feature store created: 630 rows, 43 columns
+2026-03-28 19:12:13 - src.feature_engineering - INFO - Features: ['match_id', 'season', 'date', 'team1', 'team2', 'venue', 'city', 'toss_winner', 'toss_decision', 'winner', 'result', 'result_margin', 'total_runs', 'total_extras', 'total_wickets', 'total_overs', 'winner_encoded', 'match_id_encoded', 'team1_encoded', 'team2_encoded', 'venue_encoded', 'city_encoded', 'toss_winner_encoded', 'toss_decision_encoded', 'result_encoded', 'team1_win_rate_last5', 'team2_win_rate_last5', 'team1_streak', 'team2_streak', 'team1_h2h_win_pct', 'team2_h2h_win_pct', 'h2h_matches_played', 'team1_venue_win_rate', 'team2_venue_win_rate', 'team1_venue_matches', 'team2_venue_matches', 'toss_winner_is_team1', 'day_of_week', 'month', 'season_period', 'form_diff', 'venue_form_diff', 'h2h_win_pct_diff']
+2026-03-28 19:12:13 - src.feature_engineering - INFO - Saved feature matrix to D:\ai-project\match-predictor\data\processed\feature_matrix.csv
+2026-03-28 19:12:13 - src.feature_engineering - INFO - ==================================================
+2026-03-28 19:12:13 - src.feature_engineering - INFO - Feature store build completed
+2026-03-28 19:12:13 - src.feature_engineering - INFO - ==================================================

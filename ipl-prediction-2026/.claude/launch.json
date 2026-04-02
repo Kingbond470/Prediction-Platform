@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "ipl-dev",
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "/Users/ravisharma/.nvm/versions/node/v24.14.1/bin/npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
     }

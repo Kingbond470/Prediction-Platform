@@ -5,6 +5,7 @@ import { Match } from "@/lib/supabase";
 import { Button } from "./Button";
 import { TeamBadge } from "./TeamBadge";
 import { getTeamConfig } from "@/app/lib/teams";
+import { getMLPrediction, computeHybridProb, getConfidenceTier, CONFIDENCE_LABELS } from "@/lib/mlPredictions";
 
 interface PredictionModalProps {
   isOpen: boolean;
@@ -38,6 +39,19 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
   const team1 = getTeamConfig(match.team_1);
   const team2 = getTeamConfig(match.team_2);
   const selectedConfig = selectedTeam ? getTeamConfig(selectedTeam) : null;
+
+  // ── AI Analysis data ──────────────────────────────────────────────────────
+  const mlPred = getMLPrediction(match.match_number);
+  const mlProb1 = mlPred ? mlPred.probTeam1 : match.team_1_probability / 100;
+  const mlProb2 = 1 - mlProb1;
+  const totalSeeded = match.initial_count_team_1 + match.initial_count_team_2;
+  const crowdPct1 = totalSeeded > 0 ? match.initial_count_team_1 / totalSeeded : 0.5;
+  const crowdPct2 = 1 - crowdPct1;
+  const hybridProb1 = computeHybridProb(mlProb1, crowdPct1);
+  const aiPick = hybridProb1 >= 0.5 ? match.team_1 : match.team_2;
+  const aiPickConfig = getTeamConfig(aiPick);
+  const confidenceTier = mlPred ? getConfidenceTier(mlPred.confidence) : "medium";
+  const confidenceLabel = CONFIDENCE_LABELS[confidenceTier];
 
   const handleVote = async () => {
     if (!selectedTeam) return;
@@ -206,6 +220,69 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
                 </button>
               );
             })}
+          </div>
+
+          {/* AI Analysis */}
+          <div className="mb-5 rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="px-4 pt-3 pb-2 flex items-center justify-between border-b border-white/[0.05]">
+              <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">🤖 How the AI Decides</p>
+              <span
+                className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                style={{
+                  background: confidenceTier === "high" ? "rgba(16,185,129,0.12)" : confidenceTier === "medium" ? "rgba(245,158,11,0.12)" : "rgba(99,102,241,0.12)",
+                  color: confidenceTier === "high" ? "#10B981" : confidenceTier === "medium" ? "#F59E0B" : "#818CF8",
+                  border: `1px solid ${confidenceTier === "high" ? "rgba(16,185,129,0.25)" : confidenceTier === "medium" ? "rgba(245,158,11,0.25)" : "rgba(99,102,241,0.25)"}`,
+                }}
+              >
+                {confidenceLabel}
+              </span>
+            </div>
+
+            <div className="px-4 py-3 space-y-2.5">
+              {/* ML Model bar (Form 30% + H2H 30% = 60%) */}
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-gray-400">📊 ML Model <span className="text-gray-600">(Form + H2H · 60%)</span></span>
+                  <span className="font-semibold" style={{ color: mlProb1 >= 0.5 ? team1.color : team2.color }}>
+                    {mlProb1 >= 0.5 ? match.team_1 : match.team_2} {Math.round(Math.max(mlProb1, mlProb2) * 100)}%
+                  </span>
+                </div>
+                <div className="h-1.5 w-full rounded-full overflow-hidden bg-white/[0.06] flex">
+                  <div className="h-full rounded-l-full" style={{ width: `${mlProb1 * 100}%`, background: team1.color, opacity: 0.85 }} />
+                  <div className="h-full flex-1 rounded-r-full" style={{ background: team2.color, opacity: 0.85 }} />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-[10px] font-medium" style={{ color: team1.color }}>{match.team_1} {Math.round(mlProb1 * 100)}%</span>
+                  <span className="text-[10px] font-medium" style={{ color: team2.color }}>{Math.round(mlProb2 * 100)}% {match.team_2}</span>
+                </div>
+              </div>
+
+              {/* Community bar (40%) */}
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-gray-400">👥 Community <span className="text-gray-600">(40%)</span></span>
+                  <span className="font-semibold" style={{ color: crowdPct1 >= 0.5 ? team1.color : team2.color }}>
+                    {crowdPct1 >= 0.5 ? match.team_1 : match.team_2} {Math.round(Math.max(crowdPct1, crowdPct2) * 100)}%
+                  </span>
+                </div>
+                <div className="h-1.5 w-full rounded-full overflow-hidden bg-white/[0.06] flex">
+                  <div className="h-full rounded-l-full" style={{ width: `${crowdPct1 * 100}%`, background: team1.color, opacity: 0.85 }} />
+                  <div className="h-full flex-1 rounded-r-full" style={{ background: team2.color, opacity: 0.85 }} />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-[10px] font-medium" style={{ color: team1.color }}>{match.team_1} {Math.round(crowdPct1 * 100)}%</span>
+                  <span className="text-[10px] font-medium" style={{ color: team2.color }}>{Math.round(crowdPct2 * 100)}% {match.team_2}</span>
+                </div>
+              </div>
+
+              {/* AI pick result */}
+              <div className="flex items-center justify-between pt-1 mt-1 border-t border-white/[0.05]">
+                <span className="text-xs text-gray-500">AI will pick</span>
+                <span className="text-sm font-bold" style={{ color: aiPickConfig.color }}>
+                  🤖 {aiPick} ({Math.round(Math.max(hybridProb1, 1 - hybridProb1) * 100)}% confidence)
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Inline error */}

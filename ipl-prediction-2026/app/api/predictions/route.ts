@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
+import { getMLPrediction, computeHybridProb } from "@/lib/mlPredictions";
 
 // In-memory store for mock predictions (when Supabase not available)
 const mockPredictions: Map<string, { predicted_team: string; ai_predicted_team: string }> = new Map();
@@ -75,11 +76,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // AI prediction based on team probabilities (< not > — team_1 wins team_1_probability% of the time)
-    const aiPredictedTeam =
-      Math.random() < match.team_1_probability / 100
-        ? match.team_1
-        : match.team_2;
+    // ── Hybrid AI prediction: 40% crowd votes + 60% ML model ─────────────────
+    // ML signal: pre-computed XGBoost probabilities (form 30% + H2H 30% embedded)
+    // Crowd signal: current vote distribution
+    // AI picks deterministically — whichever team has the higher hybrid probability
+    const mlPred = getMLPrediction(match.match_number);
+    const mlProb1 = mlPred
+      ? mlPred.probTeam1
+      : match.team_1_probability / 100;
+
+    // Crowd signal from seeded vote counts (best proxy available pre-insertion)
+    const totalSeeded = match.initial_count_team_1 + match.initial_count_team_2;
+    const crowdPct1 = totalSeeded > 0
+      ? match.initial_count_team_1 / totalSeeded
+      : 0.5;
+
+    const hybridProb1 = computeHybridProb(mlProb1, crowdPct1);
+    const aiPredictedTeam = hybridProb1 >= 0.5 ? match.team_1 : match.team_2;
 
     const mockKey = `${user_id}::${match_id}`;
 

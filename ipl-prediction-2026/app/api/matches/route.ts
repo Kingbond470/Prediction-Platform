@@ -156,10 +156,6 @@ export async function GET() {
     // Step 2e: Mark any upcoming matches whose date has passed as "live"
     // so they stay visible until admin enters results. Never push dates forward —
     // that would cause real past matches to disappear from the schedule.
-    const staleMatches = liveMatches.filter(
-      (m) => new Date(m.match_date).getTime() < now && m.status === "upcoming"
-    );
-
     const refreshed = await Promise.all(
       liveMatches.map(async (m) => {
         const isStale = new Date(m.match_date).getTime() < now && m.status === "upcoming";

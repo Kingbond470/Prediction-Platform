@@ -188,7 +188,7 @@ def format_confidence(prob: float) -> str:
         level = "Very High"
     elif prob >= 0.65:
         level = "High"
-    elif prob >= 0.55:
+    elif prob >= 0.50:
         level = "Moderate"
     elif prob >= 0.45:
         level = "Slight"

@@ -93,7 +93,7 @@ def test_validate_numeric_range():
 
 def test_check_duplicates():
     """Test duplicate detection."""
-    df = pd.DataFrame({'a': [1, 1, 2, 3], 'b': [4, 5, 6, 7]})
+    df = pd.DataFrame({'a': [1, 1, 2, 3], 'b': [4, 4, 6, 7]})
     count = check_duplicates(df)
     assert count == 1
 

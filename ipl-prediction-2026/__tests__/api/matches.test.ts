@@ -146,18 +146,18 @@ describe("GET /api/matches", () => {
     expect(json.error).toBe("DB connection failed");
   });
 
-  it("auto-refreshes stale seed matches (0 predictions) with future dates", async () => {
+  it("marks stale seed matches (0 predictions) as live", async () => {
     const staleMatch = { ...MOCK_MATCH, match_date: PAST_DATE, status: "upcoming" };
     const { matchChain } = setupMocks({
       upcomingData: [staleMatch],
-      predictionData: [],  // no predictions → should reset date
+      predictionData: [],
     });
 
     const res  = await GET();
     const json = await res.json();
 
     expect(res.status).toBe(200);
-    expect(new Date(json.matches[0].match_date).getTime()).toBeGreaterThan(Date.now());
+    expect(json.matches[0].status).toBe("live");
     expect(matchChain.update).toHaveBeenCalled();
   });
 

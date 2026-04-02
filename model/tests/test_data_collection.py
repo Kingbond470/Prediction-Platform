@@ -18,8 +18,11 @@ def test_setup_kaggle_auth_missing_credentials(monkeypatch):
     monkeypatch.setenv("KAGGLE_USERNAME", "")
     monkeypatch.setenv("KAGGLE_API_KEY", "")
 
-    with pytest.raises(ValueError, match="Kaggle credentials not found"):
-        setup_kaggle_auth()
+    with patch('src.data_collection.config') as mock_config:
+        mock_config.KAGGLE_USERNAME = ""
+        mock_config.KAGGLE_API_KEY = ""
+        with pytest.raises(ValueError, match="Kaggle credentials not found"):
+            setup_kaggle_auth()
 
 
 @patch('src.data_collection.KaggleApi')

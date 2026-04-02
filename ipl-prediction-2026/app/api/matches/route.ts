@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
-import { fetchIPLOdds } from "@/app/lib/oddsApi";
+import { fetchIPLOdds, fetchIPLScores } from "@/app/lib/oddsApi";
+import { scoreMatch } from "@/lib/scoreMatch";
 
 // Never cache — matches update frequently (live odds, stale date refresh)
 export const dynamic = "force-dynamic";
@@ -84,7 +85,47 @@ export async function GET() {
       }
     }
 
-    // Step 2b: Fetch from Supabase — two queries to ensure completed matches
+    // Step 2b: Sync completed scores — auto-complete matches the Odds API says are done
+    if (hasOddsKey) {
+      try {
+        const completedScores = await fetchIPLScores(3);
+        for (const cs of completedScores) {
+          // Find the Supabase match by odds event ID or by team pair
+          const { data: byOddsId } = await supabase
+            .from("matches")
+            .select("id, status, team_1, team_2")
+            .eq("odds_event_id", cs.oddsId)
+            .maybeSingle();
+
+          const { data: byTeams } = byOddsId ? { data: null } : await supabase
+            .from("matches")
+            .select("id, status, team_1, team_2")
+            .or(
+              `and(team_1.eq.${cs.team1ShortCode},team_2.eq.${cs.team2ShortCode}),` +
+              `and(team_1.eq.${cs.team2ShortCode},team_2.eq.${cs.team1ShortCode})`
+            )
+            .maybeSingle();
+
+          const match = byOddsId || byTeams;
+          if (!match || match.status === "completed") continue;
+
+          // winner from scores API is a short code; make sure it matches our team fields
+          const winner = match.team_1 === cs.winner ? match.team_1 : match.team_2;
+          if (!winner) continue;
+
+          try {
+            await scoreMatch(match.id, winner);
+            console.log(`[auto-score] ${match.team_1} vs ${match.team_2} → winner: ${winner}`);
+          } catch (e) {
+            console.error(`[auto-score] failed for ${match.id}:`, e);
+          }
+        }
+      } catch (err) {
+        console.warn("[auto-score] scores sync failed:", err);
+      }
+    }
+
+    // Step 2d: Fetch from Supabase — two queries to ensure completed matches
     // are never dropped by a date-ordered limit.
     const [upcomingRes, completedRes] = await Promise.all([
       supabase
@@ -109,58 +150,24 @@ export async function GET() {
     const allMatches = [...(upcomingRes.data || []), ...(completedRes.data || [])];
 
     const now = Date.now();
-    const day = 24 * 60 * 60 * 1000;
     const liveMatches = allMatches;
 
 
-    // Step 2c: For stale matches, only reset seed matches with 0 predictions.
-    // Matches with predictions should stay as-is (mark live) so users can see their votes.
+    // Step 2e: Mark any upcoming matches whose date has passed as "live"
+    // so they stay visible until admin enters results. Never push dates forward —
+    // that would cause real past matches to disappear from the schedule.
     const staleMatches = liveMatches.filter(
       (m) => new Date(m.match_date).getTime() < now && m.status === "upcoming"
     );
 
-    // Batch-fetch which stale matches have predictions to avoid N+1 queries
-    const staleIds = staleMatches.map((m) => m.id);
-    let matchIdsWithPredictions = new Set<string>();
-    if (staleIds.length > 0) {
-      const { data: predRows } = await supabase
-        .from("predictions")
-        .select("match_id")
-        .in("match_id", staleIds);
-      matchIdsWithPredictions = new Set((predRows || []).map((r) => r.match_id));
-    }
-
-    let staleIdx = 0;
     const refreshed = await Promise.all(
       liveMatches.map(async (m) => {
         const isStale = new Date(m.match_date).getTime() < now && m.status === "upcoming";
         if (!isStale) return m;
 
-        // Has real predictions → mark live so users can see their vote on results page
-        if (matchIdsWithPredictions.has(m.id)) {
-          await supabase.from("matches").update({ status: "live" }).eq("id", m.id);
-          return { ...m, status: "live" as const };
-        }
-
-        // Empty seed match → push date forward so app stays usable in demo
-        staleIdx++;
-        const newMatchDate = new Date(now + staleIdx * day);
-        const updated = {
-          ...m,
-          match_date:      newMatchDate.toISOString(),
-          vote_start_time: new Date(now - 60 * 60 * 1000).toISOString(),
-          vote_end_time:   new Date(newMatchDate.getTime() - 30 * 60 * 1000).toISOString(),
-          status: "upcoming" as const,
-          winner: null,
-        };
-        await supabase.from("matches").update({
-          match_date:      updated.match_date,
-          vote_start_time: updated.vote_start_time,
-          vote_end_time:   updated.vote_end_time,
-          status:          updated.status,
-          winner:          updated.winner,
-        }).eq("id", m.id);
-        return updated;
+        // Mark live so the match stays visible in the Live tab until admin enters result
+        await supabase.from("matches").update({ status: "live" }).eq("id", m.id);
+        return { ...m, status: "live" as const };
       })
     );
 

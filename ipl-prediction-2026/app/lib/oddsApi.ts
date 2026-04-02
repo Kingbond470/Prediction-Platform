@@ -55,6 +55,74 @@ interface OddsApiEvent {
   }>;
 }
 
+// ── Scores API ────────────────────────────────────────────────────────────────
+
+export interface CompletedMatch {
+  oddsId: string;        // Odds API event ID — matches id synced into Supabase
+  team1FullName: string;
+  team2FullName: string;
+  team1ShortCode: string;
+  team2ShortCode: string;
+  winner: string;        // short code of winning team
+  commenceTime: string;  // ISO string
+}
+
+interface ScoresApiEvent {
+  id: string;
+  commence_time: string;
+  completed: boolean;
+  home_team: string;
+  away_team: string;
+  scores: Array<{ name: string; score: string }> | null;
+}
+
+function parseRuns(score: string): number {
+  // Cricket score format: "156/7" or "156" — take the part before "/"
+  return parseInt(score.split("/")[0], 10) || 0;
+}
+
+export async function fetchIPLScores(daysFrom = 3): Promise<CompletedMatch[]> {
+  const apiKey = process.env.ODDS_API_KEY;
+  if (!apiKey || apiKey === "YOUR_KEY_HERE") throw new Error("ODDS_API_KEY not configured");
+
+  const url =
+    `https://api.the-odds-api.com/v4/sports/cricket_ipl/scores/` +
+    `?apiKey=${apiKey}&daysFrom=${daysFrom}`;
+
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Odds API scores ${res.status}: ${body}`);
+  }
+
+  const events: ScoresApiEvent[] = await res.json();
+
+  return events
+    .filter((e) => e.completed && e.scores && e.scores.length >= 2)
+    .map((e) => {
+      const scores = e.scores!;
+      const homeScore = scores.find((s) => s.name === e.home_team);
+      const awayScore = scores.find((s) => s.name === e.away_team);
+      if (!homeScore || !awayScore) return null;
+
+      const homeRuns = parseRuns(homeScore.score);
+      const awayRuns = parseRuns(awayScore.score);
+      const winnerFullName = homeRuns >= awayRuns ? e.home_team : e.away_team;
+      const loserFullName  = homeRuns >= awayRuns ? e.away_team : e.home_team;
+
+      return {
+        oddsId:           e.id,
+        team1FullName:    e.home_team,
+        team2FullName:    e.away_team,
+        team1ShortCode:   toShortCode(e.home_team),
+        team2ShortCode:   toShortCode(e.away_team),
+        winner:           toShortCode(winnerFullName),
+        commenceTime:     e.commence_time,
+      } satisfies CompletedMatch;
+    })
+    .filter((m): m is CompletedMatch => m !== null);
+}
+
 export async function fetchIPLOdds(): Promise<OddsMatch[]> {
   const apiKey = process.env.ODDS_API_KEY;
   if (!apiKey || apiKey === "YOUR_KEY_HERE") throw new Error("ODDS_API_KEY not configured");

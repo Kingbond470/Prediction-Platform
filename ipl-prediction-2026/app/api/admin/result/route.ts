@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
-import { POINTS_CORRECT, POINTS_UNDERDOG, POINTS_BEAT_AI } from "@/app/lib/scoring";
 import { timingSafeEqual } from "crypto";
+import { scoreMatch } from "@/lib/scoreMatch";
 
 // Constant-time secret check — prevents timing side-channel brute force
 function isAuthorized(request: NextRequest): boolean {
@@ -27,26 +27,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "match_id and winner are required" }, { status: 400 });
     }
 
-    // 1. Get match
+    // Validate match exists and winner is valid before scoring
     const { data: match, error: matchError } = await supabase
       .from("matches")
-      .select("*")
+      .select("id, team_1, team_2, status")
       .eq("id", match_id)
       .single();
 
     if (matchError || !match) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
-
-    // Prevent double-scoring an already-completed match
     if (match.status === "completed") {
       return NextResponse.json(
         { error: "Match is already completed. Results have already been scored." },
         { status: 409 }
       );
     }
-
-    // Validate that winner is one of the match's two teams
     if (winner !== match.team_1 && winner !== match.team_2) {
       return NextResponse.json(
         { error: `Winner must be "${match.team_1}" or "${match.team_2}"` },
@@ -54,100 +50,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine favourite (higher probability team)
-    const favourite = match.team_1_probability >= match.team_2_probability ? match.team_1 : match.team_2;
-    const isUnderdogWon = winner !== favourite;
-
-    // 2. Update match winner and status
-    await supabase
-      .from("matches")
-      .update({ winner, status: "completed" })
-      .eq("id", match_id);
-
-    // 3. Get all predictions for this match
-    const { data: predictions } = await supabase
-      .from("predictions")
-      .select("*")
-      .eq("match_id", match_id);
-
-    if (!predictions || predictions.length === 0) {
-      return NextResponse.json({ success: true, scored: 0, message: "No predictions to score" });
-    }
-
-    // 4. Score each prediction
-    let scored = 0;
-    for (const pred of predictions) {
-      const isCorrect = pred.predicted_team === winner;
-      const aiIsCorrect = pred.ai_predicted_team === winner;
-      const beatAI = isCorrect && !aiIsCorrect;
-      const pickedUnderdog = isUnderdogWon && isCorrect;
-
-      let points = 0;
-      if (isCorrect) {
-        points += pickedUnderdog ? POINTS_UNDERDOG : POINTS_CORRECT;
-        if (beatAI) points += POINTS_BEAT_AI;
-      }
-
-      await supabase
-        .from("predictions")
-        .update({
-          is_correct: isCorrect,
-          points_earned: points,
-        })
-        .eq("id", pred.id);
-
-      scored++;
-    }
-
-    // 5. Update leaderboard totals in users table
-    // Group points by user
-    const userPoints: Record<string, { correct: number; total: number; points: number }> = {};
-    for (const pred of predictions) {
-      const isCorrect = pred.predicted_team === winner;
-      const aiIsCorrect = pred.ai_predicted_team === winner;
-      const beatAI = isCorrect && !aiIsCorrect;
-      const pickedUnderdog = isUnderdogWon && isCorrect;
-
-      let points = 0;
-      if (isCorrect) {
-        points += pickedUnderdog ? POINTS_UNDERDOG : POINTS_CORRECT;
-        if (beatAI) points += POINTS_BEAT_AI;
-      }
-
-      if (!userPoints[pred.user_id]) {
-        userPoints[pred.user_id] = { correct: 0, total: 0, points: 0 };
-      }
-      userPoints[pred.user_id].total++;
-      if (isCorrect) userPoints[pred.user_id].correct++;
-      userPoints[pred.user_id].points += points;
-    }
-
-    // Update each user's totals
-    for (const [userId, stats] of Object.entries(userPoints)) {
-      const { data: user } = await supabase
-        .from("users")
-        .select("total_points, total_predictions, total_correct")
-        .eq("id", userId)
-        .single();
-
-      if (user) {
-        await supabase
-          .from("users")
-          .update({
-            total_points: (user.total_points || 0) + stats.points,
-            total_predictions: (user.total_predictions || 0) + stats.total,
-            total_correct: (user.total_correct || 0) + stats.correct,
-          })
-          .eq("id", userId);
-      }
-    }
+    const scored = await scoreMatch(match_id, winner);
 
     return NextResponse.json({
       success: true,
       match_id,
       winner,
       scored,
-      message: `Scored ${scored} predictions. Leaderboard updated.`,
+      message: scored === 0
+        ? "Match completed. No predictions to score."
+        : `Scored ${scored} predictions. Leaderboard updated.`,
     });
   } catch (err) {
     console.error("[admin/result]", err);

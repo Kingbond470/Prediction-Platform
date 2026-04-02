@@ -11,7 +11,13 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-import xgboost as xgb
+try:
+    import xgboost as xgb
+    XGBOOST_AVAILABLE = True
+except Exception:
+    xgb = None
+    XGBOOST_AVAILABLE = False
+
 from src.config import config
 from src.utils.logger import get_logger
 
@@ -218,7 +224,7 @@ class RandomForestModel(BaseModel):
 
 
 class XGBoostModel(BaseModel):
-    """XGBoost model wrapper."""
+    """XGBoost model wrapper. Requires libomp on macOS (brew install libomp)."""
 
     def __init__(
         self,
@@ -242,6 +248,10 @@ class XGBoostModel(BaseModel):
         self.random_state = random_state or config.RANDOM_STATE
         self.n_jobs = n_jobs
 
+        if not XGBOOST_AVAILABLE:
+            raise ImportError(
+                "XGBoost is not available. On macOS run: brew install libomp"
+            )
         self.model = xgb.XGBClassifier(
             n_estimators=self.n_estimators,
             learning_rate=self.learning_rate,
@@ -331,5 +341,9 @@ def create_model(model_type: str, **kwargs) -> BaseModel:
 
     if model_type not in model_map:
         raise ValueError(f"Unknown model type: {model_type}. Choose from {list(model_map.keys())}")
+
+    if model_type == 'xgboost' and not XGBOOST_AVAILABLE:
+        logger.warning("XGBoost unavailable (missing libomp on macOS). Falling back to random_forest.")
+        model_type = 'random_forest'
 
     return model_map[model_type](**kwargs)

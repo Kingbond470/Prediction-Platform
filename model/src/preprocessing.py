@@ -206,13 +206,22 @@ def merge_match_deliveries(
     deliveries_df['match_id'] = deliveries_df['match_id'].astype(str)
 
     # Aggregate delivery-level stats per match
-    # For example, total runs per match, total wickets, etc.
-    match_aggregates = deliveries_df.groupby('match_id').agg({
-        'runs_off_bat': 'sum',
-        'extras': 'sum',
-        'wicket': 'sum' if 'wicket' in deliveries_df.columns else None,
-        'over': 'max' if 'over' in deliveries_df.columns else None
-    }).reset_index()
+    # Build agg dict only for columns that actually exist
+    agg_dict: dict = {}
+    if 'runs_off_bat' in deliveries_df.columns:
+        agg_dict['runs_off_bat'] = 'sum'
+    if 'extras' in deliveries_df.columns:
+        agg_dict['extras'] = 'sum'
+    if 'wicket' in deliveries_df.columns:
+        agg_dict['wicket'] = 'sum'
+    if 'over' in deliveries_df.columns:
+        agg_dict['over'] = 'max'
+
+    if not agg_dict:
+        logger.warning("No aggregatable columns found in deliveries data, skipping merge")
+        return matches_df
+
+    match_aggregates = deliveries_df.groupby('match_id').agg(agg_dict).reset_index()
 
     # Rename aggregated columns
     agg_rename = {

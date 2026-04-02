@@ -8,6 +8,23 @@ from typing import Tuple, Optional
 import pandas as pd
 import os
 import json
+
+# Bootstrap Kaggle credentials from .env BEFORE the kaggle package is imported.
+# The kaggle package calls api.authenticate() in its __init__.py at import time,
+# so ~/.kaggle/kaggle.json must already exist by then.
+from dotenv import load_dotenv as _load_dotenv
+_load_dotenv()
+_username = os.getenv("KAGGLE_USERNAME", "")
+_api_key = os.getenv("KAGGLE_API_KEY", "")
+if _username and _api_key:
+    _kaggle_dir = Path.home() / ".kaggle"
+    _kaggle_dir.mkdir(exist_ok=True)
+    _kaggle_json = _kaggle_dir / "kaggle.json"
+    if not _kaggle_json.exists():
+        with open(_kaggle_json, "w") as _f:
+            json.dump({"username": _username, "key": _api_key}, _f)
+        os.chmod(_kaggle_json, 0o600)
+
 from kaggle.api.kaggle_api_extended import KaggleApi
 from src.config import config
 from src.utils.logger import get_logger
@@ -52,7 +69,7 @@ def setup_kaggle_auth() -> KaggleApi:
     return api
 
 
-def download_ipl_datasets(api: KaggleApi, dataset_name: str = "nowhere19500/ipl-complete-dataset-20082016") -> Tuple[Path, Path]:
+def download_ipl_datasets(api: KaggleApi, dataset_name: str = None) -> Tuple[Path, Path]:
     """
     Download IPL datasets from Kaggle.
 
@@ -66,6 +83,12 @@ def download_ipl_datasets(api: KaggleApi, dataset_name: str = "nowhere19500/ipl-
     Raises:
         Exception: If download fails
     """
+    # Resolve dataset name: prefer config.yaml value, fall back to hardcoded default
+    if dataset_name is None:
+        dataset_name = getattr(config, 'data', {}).get(
+            'kaggle_dataset', 'patrickb1912/ipl-complete-dataset-20082020'
+        )
+
     logger.info(f"Downloading IPL dataset from Kaggle: {dataset_name}")
 
     try:

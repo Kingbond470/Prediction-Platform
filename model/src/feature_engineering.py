@@ -314,10 +314,6 @@ def standardize_team_name(team_name: str, team_mapping: dict) -> str:
     return team_name
 
 
-# Note: This configuration needs to be loaded correctly
-config = __import__('src.config', fromlist=['config']).config if 'config' not in globals() else config
-
-
 def build_feature_store(
     matches_df: pd.DataFrame,
     deliveries_df: Optional[pd.DataFrame] = None,

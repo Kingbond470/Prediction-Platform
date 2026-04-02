@@ -8,9 +8,9 @@ data:
   predictions_2026: "data/processed/predictions_2026.csv"
   predictions_2026_advanced: "data/processed/predictions_2026_advanced.csv"
   external_fixtures: "data/external/ipl_2026_fixtures.csv"
-  # Newer dataset with 2008-2024 coverage — overrides the legacy 2008-2016 one
-  kaggle_dataset: "mlummus/ipl-complete-dataset-2008-2021"
-  kaggle_dataset_fallback: "nowhere19500/ipl-complete-dataset-20082016"
+  # Primary dataset: 2008-2024 coverage (most downloaded IPL dataset on Kaggle)
+  kaggle_dataset: "patrickb1912/ipl-complete-dataset-20082020"
+  kaggle_dataset_fallback: "mlummus/ipl-complete-dataset-2008-2021"
 
 features:
   categorical_columns:
@@ -34,8 +34,8 @@ features:
 
   # Validation strategy
   validation_strategy: "temporal"
-  train_cutoff: "2014-12-31"
-  val_cutoff: "2016-12-31"
+  train_cutoff: "2021-12-31"
+  val_cutoff: "2023-12-31"
   test_size: 0.2
 
   # Feature engineering parameters (v1)

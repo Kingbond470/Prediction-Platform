@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
       .from("users")
       .select("id, username")
       .eq("phone", normalizedPhone)
-      .single();
+      .maybeSingle();           // returns null (not PGRST116 error) when 0 rows
 
     if (existingByPhone) {
       // Return existing user so they can continue seamlessly
@@ -160,7 +160,7 @@ export async function POST(request: NextRequest) {
       .from("users")
       .select("id")
       .eq("username", username.trim())
-      .single();
+      .maybeSingle();           // returns null (not PGRST116 error) when 0 rows
 
     if (existingByUsername) {
       return NextResponse.json(

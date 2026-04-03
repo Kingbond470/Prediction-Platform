@@ -38,10 +38,11 @@ function makeFromChain({
   insertError = null as object | null,
 } = {}) {
   return {
-    select: jest.fn().mockReturnThis(),
-    eq:     jest.fn().mockReturnThis(),
-    single: jest.fn().mockResolvedValue({ data: singleData, error: singleError }),
-    insert: jest.fn().mockResolvedValue({ error: insertError }),
+    select:      jest.fn().mockReturnThis(),
+    eq:          jest.fn().mockReturnThis(),
+    single:      jest.fn().mockResolvedValue({ data: singleData, error: singleError }),
+    maybeSingle: jest.fn().mockResolvedValue({ data: singleData, error: singleError }),
+    insert:      jest.fn().mockResolvedValue({ error: insertError }),
   };
 }
 

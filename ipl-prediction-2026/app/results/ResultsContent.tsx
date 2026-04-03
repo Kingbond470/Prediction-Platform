@@ -254,6 +254,14 @@ export default function ResultsContent() {
         onSeeWinners={() => setShowPastWinners(true)}
       />
 
+      {/* ── Back to history ──────────────────────────────────── */}
+      <button
+        onClick={() => router.push("/results")}
+        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-white transition-smooth mb-1 -mt-1"
+      >
+        ← My Predictions
+      </button>
+
       {/* ── Result celebration / wrong pick banner ────────────── */}
       {isCorrect && (
         <div

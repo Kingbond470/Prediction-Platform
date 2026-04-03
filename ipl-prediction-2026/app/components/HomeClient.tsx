@@ -65,7 +65,11 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           );
           setVotedMatchIds(ids);
         })
-        .catch(() => {});
+        .catch((err) => {
+          // Log so it shows up in Vercel function logs; swallow so the page
+          // still renders — the server rejects duplicate predictions anyway.
+          console.error("[HomeClient] failed to fetch user predictions:", err);
+        });
     }
 
     // Auto-select tab based on what has content

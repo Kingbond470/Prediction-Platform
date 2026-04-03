@@ -131,6 +131,8 @@ function SignupForm() {
         if (favoriteTeam) localStorage.setItem("favoriteTeam", favoriteTeam);
         if (city.trim()) localStorage.setItem("userCity", city.trim());
         localStorage.setItem("newSignup", "1");
+        // Signal NavAuth (in the shared layout) to re-read username immediately
+        window.dispatchEvent(new CustomEvent("authChanged"));
         router.push("/");
       } else {
         setServerError(data.error || "Something went wrong. Please try again.");

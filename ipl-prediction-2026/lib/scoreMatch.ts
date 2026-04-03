@@ -92,13 +92,17 @@ export async function scoreMatch(matchId: string, winner: string): Promise<numbe
       }
       stats.points += streakBonus;
 
-      // Backfill streak bonus into prediction row
+      // Backfill streak bonus into prediction row.
+      // stats.points already includes streakBonus (added above), so use it
+      // directly rather than re-reading pred.points_earned (still null at this
+      // point — the earlier update in step 4 wrote to DB but didn't mutate
+      // the in-memory array).
       if (streakBonus > 0) {
         const pred = predictions.find((p) => p.user_id === userId);
         if (pred) {
           await supabase
             .from("predictions")
-            .update({ points_earned: (pred.points_earned ?? 0) + streakBonus })
+            .update({ points_earned: stats.points })
             .eq("id", pred.id);
         }
       }

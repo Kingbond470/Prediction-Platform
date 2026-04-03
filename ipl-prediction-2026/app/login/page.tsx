@@ -36,6 +36,8 @@ export default function LoginPage() {
         if (data.city) localStorage.setItem("userCity", data.city);
         if (data.favorite_team) localStorage.setItem("favoriteTeam", data.favorite_team);
         setFavoriteTeam(data.favorite_team ?? null);
+        // Signal NavAuth (in the shared layout) to re-read username immediately
+        window.dispatchEvent(new CustomEvent("authChanged"));
         router.push("/");
       } else {
         setError(data.error || "Login failed. Please try again.");

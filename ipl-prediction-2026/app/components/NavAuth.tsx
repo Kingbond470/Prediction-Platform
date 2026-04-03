@@ -8,19 +8,22 @@ export function NavAuth() {
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
-    setUsername(localStorage.getItem("username"));
+    const readAuth = () => setUsername(localStorage.getItem("username"));
+    readAuth();
+    // Re-read when login/signup dispatches an "authChanged" event so the nav
+    // updates immediately without requiring a full page reload.
+    window.addEventListener("authChanged", readAuth);
+    return () => window.removeEventListener("authChanged", readAuth);
   }, []);
 
   const handleLogout = async () => {
-    // Clear server-side session cookie
     await fetch("/api/auth/logout", { method: "POST" });
-    // Clear client-side state
     localStorage.removeItem("userId");
     localStorage.removeItem("username");
     localStorage.removeItem("firstName");
     localStorage.removeItem("favoriteTeam");
     localStorage.removeItem("userCity");
-    setUsername(null);
+    window.dispatchEvent(new CustomEvent("authChanged"));
     router.push("/");
     router.refresh();
   };

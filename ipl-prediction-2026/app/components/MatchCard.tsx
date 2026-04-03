@@ -6,6 +6,7 @@ import { TeamBadge } from "./TeamBadge";
 import { CountdownTimer } from "./CountdownTimer";
 import { getTeamConfig } from "@/app/lib/teams";
 import { matchToSlug } from "@/lib/matchSlug";
+import { useEffect, useState } from "react";
 
 interface MatchCardProps {
   match: Match;
@@ -14,6 +15,17 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardProps) {
+  const [recentVotes, setRecentVotes] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (match.status !== "upcoming") return;
+    fetch(`/api/predictions/counts?match_id=${match.id}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.counts?.recent_1h > 0) setRecentVotes(d.counts.recent_1h);
+      })
+      .catch(() => {});
+  }, [match.id, match.status]);
   const votingOpen =
     match.status === "upcoming" && new Date() < new Date(match.match_date);
 
@@ -76,6 +88,12 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
             {confidenceTier === "low" && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-500/12 border border-indigo-500/25 text-indigo-400">
                 ⚖️ Toss-up
+              </span>
+            )}
+            {recentVotes !== null && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/12 border border-green-500/25 text-green-400 flex items-center gap-1">
+                <span className="live-dot" />
+                {recentVotes} voted now
               </span>
             )}
           </div>

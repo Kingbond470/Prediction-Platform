@@ -21,9 +21,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Match not found" }, { status: 404 });
   }
 
-  const [{ count: t1 }, { count: t2 }] = await Promise.all([
+  const since1h = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+  const [{ count: t1 }, { count: t2 }, { count: recent }] = await Promise.all([
     supabase.from("predictions").select("*", { count: "exact", head: true }).eq("match_id", matchId).eq("predicted_team", match.team_1),
     supabase.from("predictions").select("*", { count: "exact", head: true }).eq("match_id", matchId).eq("predicted_team", match.team_2),
+    supabase.from("predictions").select("*", { count: "exact", head: true }).eq("match_id", matchId).gte("created_at", since1h),
   ]);
 
   return NextResponse.json({
@@ -31,6 +34,7 @@ export async function GET(request: NextRequest) {
       team_1: t1 || 0,
       team_2: t2 || 0,
       total: (t1 || 0) + (t2 || 0),
+      recent_1h: recent || 0,
     },
   });
 }

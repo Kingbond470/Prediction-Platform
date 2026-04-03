@@ -228,16 +228,19 @@ export default function ResultsContent() {
   const myTeamCfg = getTeamConfig(prediction.predicted_team);
   const aiTeamCfg = getTeamConfig(prediction.ai_predicted_team || "");
 
-  const isPending = prediction.is_correct === null || prediction.is_correct === undefined;
-  const isCorrect = prediction.is_correct === true;
-  const isWrong   = prediction.is_correct === false;
-  const beatAI    = isCorrect && prediction.ai_predicted_team !== prediction.predicted_team;
-  const aiCorrect = !isPending && match.winner === prediction.ai_predicted_team;
+  const isPending  = prediction.is_correct === null || prediction.is_correct === undefined;
+  const isCorrect  = prediction.is_correct === true;
+  const isWrong    = prediction.is_correct === false;
+  // Same pick = Draw regardless of who won; different picks → winner is whoever was correct
+  const samePick   = prediction.ai_predicted_team === prediction.predicted_team;
+  const isDraw     = !isPending && samePick;
+  const humanWins  = !isPending && !samePick && isCorrect;
+  const aiWins     = !isPending && !samePick && isWrong;
 
-  const shareText = isCorrect && beatAI
+  const shareText = humanWins
     ? `I outsmarted the AI! I backed ${prediction.predicted_team} and they won! 🤖🏏 Can you beat the AI? #IPLPrediction2026`
-    : isCorrect
-    ? `I called it! ${prediction.predicted_team} won the match! 🏆 Think you can beat the AI? #IPLPrediction2026`
+    : isDraw
+    ? `I matched the AI's pick — we both called ${prediction.predicted_team}! 🤝🏏 Can you beat the AI? #IPLPrediction2026`
     : `I predicted ${prediction.predicted_team} in the IPL match — try to beat the AI! 🏏 #IPLPrediction2026`;
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + " https://iplprediction2026.in")}`;
   const twitterUrl  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
@@ -262,8 +265,8 @@ export default function ResultsContent() {
         ← My Predictions
       </button>
 
-      {/* ── Result celebration / wrong pick banner ────────────── */}
-      {isCorrect && (
+      {/* ── Result banner ─────────────────────────────────────── */}
+      {humanWins && (
         <div
           className="rounded-2xl p-5 text-center animate-slide-up"
           style={{
@@ -272,14 +275,10 @@ export default function ResultsContent() {
             boxShadow: "0 0 60px rgba(245,158,11,0.15)",
           }}
         >
-          <div className="text-4xl mb-2">{beatAI ? "🤖🏆" : "🎉"}</div>
-          <h2 className="font-display font-black text-2xl text-white mb-1">
-            {beatAI ? "You Outsmarted the AI!" : "Nailed It!"}
-          </h2>
+          <div className="text-4xl mb-2">🏆🤖</div>
+          <h2 className="font-display font-black text-2xl text-white mb-1">You Beat the AI!</h2>
           <p className="text-gray-300 text-sm mb-3 max-w-xs mx-auto">
-            {beatAI
-              ? `You backed ${prediction.predicted_team} while the AI picked ${prediction.ai_predicted_team}. Brilliant call!`
-              : `Your prediction was spot on — ${prediction.predicted_team} won!`}
+            You backed {prediction.predicted_team} while the AI picked {prediction.ai_predicted_team}. Brilliant call!
           </p>
           <div className="flex justify-center gap-2 flex-wrap">
             {prediction.points_earned != null && (
@@ -287,22 +286,43 @@ export default function ResultsContent() {
                 +{prediction.points_earned.toLocaleString("en-IN")} pts
               </span>
             )}
-            {beatAI && (
-              <span className="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 font-bold text-sm">
-                🤖 Beat AI +500
-              </span>
-            )}
+            <span className="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 font-bold text-sm">
+              🤖 Beat AI +500
+            </span>
           </div>
         </div>
       )}
-      {isWrong && (
+      {isDraw && (
+        <div
+          className="rounded-2xl p-4 text-center animate-slide-up"
+          style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.25)" }}
+        >
+          <p className="text-3xl mb-1">🤝</p>
+          <p className="font-display font-black text-white text-lg">
+            {isCorrect ? "Great Minds Think Alike!" : "Draw — Same Pick"}
+          </p>
+          <p className="text-gray-400 text-xs mt-1">
+            {isCorrect
+              ? `You and the AI both called ${prediction.predicted_team}. You each score!`
+              : `Both you and the AI picked ${prediction.predicted_team}. Tough one.`}
+          </p>
+          {prediction.points_earned != null && isCorrect && (
+            <span className="inline-block mt-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 font-bold text-sm">
+              +{prediction.points_earned.toLocaleString("en-IN")} pts
+            </span>
+          )}
+        </div>
+      )}
+      {aiWins && (
         <div
           className="rounded-2xl p-4 text-center"
           style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.18)" }}
         >
-          <p className="text-2xl mb-1">😔</p>
-          <p className="font-semibold text-white text-sm">Tough luck this time</p>
-          <p className="text-gray-500 text-xs mt-1">Keep predicting — you&apos;re one call away from climbing the board</p>
+          <p className="text-2xl mb-1">🤖</p>
+          <p className="font-semibold text-white text-sm">AI Wins This Round</p>
+          <p className="text-gray-500 text-xs mt-1">
+            You picked {prediction.predicted_team}, AI picked {prediction.ai_predicted_team} — and the AI was right.
+          </p>
         </div>
       )}
 
@@ -343,20 +363,20 @@ export default function ResultsContent() {
             style={
               isPending
                 ? { background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", color: "#10B981" }
-                : isCorrect && beatAI
+                : humanWins
                 ? { background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.4)", color: "#F59E0B" }
-                : isCorrect
-                ? { background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", color: "#10B981" }
+                : isDraw
+                ? { background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.35)", color: "#818CF8" }
                 : { background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#EF4444" }
             }
           >
             {isPending
               ? "✅ Your IPL Prediction vs AI — Locked In"
-              : isCorrect && beatAI
-              ? "🎉 You Outsmarted the AI!"
-              : isCorrect
-              ? "✅ Correct Pick!"
-              : "❌ Wrong Pick"}
+              : humanWins
+              ? "🏆 You Beat the AI!"
+              : isDraw
+              ? "🤝 Draw — Same Pick"
+              : "🤖 AI Wins This Round"}
           </span>
         </div>
 
@@ -398,9 +418,9 @@ export default function ResultsContent() {
             </p>
             <p
               className="text-xs mt-1.5 font-semibold"
-              style={{ color: isPending ? "#6B7280" : aiCorrect ? "#10B981" : "#EF4444" }}
+              style={{ color: isPending ? "#6B7280" : aiWins ? "#10B981" : isDraw ? "#F59E0B" : "#EF4444" }}
             >
-              {isPending ? "Pending result..." : aiCorrect ? "✓ AI Won" : "✗ AI Lost"}
+              {isPending ? "Pending result..." : aiWins ? "✓ AI Won" : isDraw ? "🤝 Draw" : "✗ AI Lost"}
             </p>
           </div>
         </div>
@@ -416,15 +436,15 @@ export default function ResultsContent() {
           <div
             className="mt-4 px-4 py-3 rounded-xl text-center"
             style={{
-              background: isCorrect ? "rgba(16,185,129,0.05)" : "rgba(239,68,68,0.05)",
-              border: `1px solid ${isCorrect ? "rgba(16,185,129,0.18)" : "rgba(239,68,68,0.14)"}`,
+              background: humanWins ? "rgba(16,185,129,0.05)" : isDraw ? "rgba(99,102,241,0.05)" : "rgba(239,68,68,0.05)",
+              border: `1px solid ${humanWins ? "rgba(16,185,129,0.18)" : isDraw ? "rgba(99,102,241,0.18)" : "rgba(239,68,68,0.14)"}`,
             }}
           >
-            <p className="text-sm" style={{ color: isCorrect ? "#10B981" : "#9CA3AF" }}>
-              {isCorrect && beatAI
+            <p className="text-sm" style={{ color: humanWins ? "#10B981" : isDraw ? "#818CF8" : "#9CA3AF" }}>
+              {humanWins
                 ? "🤖 You picked differently from the AI — and you were right!"
-                : isCorrect
-                ? "🎯 You and the AI both called this one correctly!"
+                : isDraw
+                ? `🎯 You and the AI both called ${prediction.predicted_team}${isCorrect ? " — and you were both right!" : " — and were both wrong."}`
                 : `The winner was ${match.winner} — better luck next match!`}
             </p>
           </div>
@@ -524,15 +544,17 @@ export default function ResultsContent() {
         <div className="rounded-2xl glass p-5 space-y-4">
           <div>
             <h3 className="font-display font-bold text-white text-lg mb-1">
-              {isCorrect && beatAI
+              {humanWins
                 ? "Show Off Your Win 🤖🏆"
-                : isCorrect
-                ? "Tell The World 🎉"
+                : isDraw
+                ? "You Both Called It 🤝"
                 : "Challenge Your Friends 📣"}
             </h3>
             <p className="text-gray-400 text-sm">
-              {isCorrect
+              {humanWins
                 ? "Brag a little — you earned it. Dare your friends to beat the AI too."
+                : isDraw
+                ? "Great minds think alike! Share and see if your friends can beat the AI."
                 : "Share your prediction and challenge friends to do better."}
             </p>
           </div>

@@ -22,6 +22,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("upcoming");
   const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
+  const [votedTeams, setVotedTeams] = useState<Map<string, string>>(new Map());
   const [showWelcome, setShowWelcome] = useState(false);
   const [favTeam, setFavTeam] = useState<string | null>(null);
 
@@ -60,10 +61,9 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
       fetch(`/api/predictions?user_id=${storedUserId}`)
         .then((r) => r.json())
         .then((d) => {
-          const ids = new Set<string>(
-            (d.predictions || []).map((p: { match_id: string }) => p.match_id)
-          );
-          setVotedMatchIds(ids);
+          const preds: { match_id: string; predicted_team: string }[] = d.predictions || [];
+          setVotedMatchIds(new Set(preds.map((p) => p.match_id)));
+          setVotedTeams(new Map(preds.map((p) => [p.match_id, p.predicted_team])));
         })
         .catch((err) => {
           // Log so it shows up in Vercel function logs; swallow so the page
@@ -246,7 +246,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
         </div>
       ) : activeTab === "results" ? (
         resultMatches.map((match) => (
-          <ResultMatchCard key={match.id} match={match} userId={userId} />
+          <ResultMatchCard key={match.id} match={match} userId={userId} userPredictedTeam={votedTeams.get(match.id) ?? null} />
         ))
       ) : (
         activeMatches.map((match) => (

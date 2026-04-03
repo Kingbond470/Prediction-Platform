@@ -10,9 +10,9 @@ function getMockMatch(matchId: string) {
   const now = Date.now();
   const day = 24 * 60 * 60 * 1000;
   const mocks: Record<string, object> = {
-    "mock-1": { id: "mock-1", match_number: 1, team_1: "CSK", team_2: "RCB", match_date: new Date(now + 2 * day).toISOString(), team_1_probability: 65, team_2_probability: 35, status: "upcoming", initial_count_team_1: 7000, initial_count_team_2: 3000 },
-    "mock-2": { id: "mock-2", match_number: 2, team_1: "MI",  team_2: "DC",  match_date: new Date(now + 3 * day).toISOString(), team_1_probability: 60, team_2_probability: 40, status: "upcoming", initial_count_team_1: 6500, initial_count_team_2: 3500 },
-    "mock-3": { id: "mock-3", match_number: 3, team_1: "KKR", team_2: "SRH", match_date: new Date(now + 4 * day).toISOString(), team_1_probability: 55, team_2_probability: 45, status: "upcoming", initial_count_team_1: 5500, initial_count_team_2: 4500 },
+    "mock-1": { id: "mock-1", match_number: 1, team_1: "CSK", team_2: "RCB", match_date: new Date(now + 2 * day).toISOString(), team_1_probability: 65, team_2_probability: 35, status: "upcoming", initial_count_team_1: 14300, initial_count_team_2: 7700 },
+    "mock-2": { id: "mock-2", match_number: 2, team_1: "MI",  team_2: "DC",  match_date: new Date(now + 3 * day).toISOString(), team_1_probability: 60, team_2_probability: 40, status: "upcoming", initial_count_team_1: 12000, initial_count_team_2: 8000 },
+    "mock-3": { id: "mock-3", match_number: 3, team_1: "KKR", team_2: "SRH", match_date: new Date(now + 4 * day).toISOString(), team_1_probability: 55, team_2_probability: 45, status: "upcoming", initial_count_team_1: 9900,  initial_count_team_2: 8100  },
   };
   return mocks[matchId] ?? null;
 }

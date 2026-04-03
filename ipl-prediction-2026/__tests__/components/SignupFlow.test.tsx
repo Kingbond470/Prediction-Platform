@@ -13,7 +13,7 @@ import userEvent from "@testing-library/user-event";
 // ── Next.js navigation mock ───────────────────────────────────────────────────
 const mockPush = jest.fn();
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: jest.fn(), refresh: jest.fn() }),
   useSearchParams: () => ({ get: () => null }),
 }));
 

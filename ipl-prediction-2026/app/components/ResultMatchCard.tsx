@@ -8,6 +8,8 @@ import { getTeamConfig } from "@/app/lib/teams";
 interface ResultMatchCardProps {
   match: Match;
   userId: string | null;
+  /** Pre-fetched from parent — skips the per-card predictions API call */
+  userPredictedTeam?: string | null;
 }
 
 interface MatchCounts {
@@ -16,36 +18,34 @@ interface MatchCounts {
   total: number;
 }
 
-export function ResultMatchCard({ match, userId }: ResultMatchCardProps) {
+export function ResultMatchCard({ match, userId, userPredictedTeam }: ResultMatchCardProps) {
   const [counts, setCounts] = useState<MatchCounts | null>(null);
-  const [userPrediction, setUserPrediction] = useState<string | null>(null);
+  // Use prop if provided; fall back to local fetch only when parent doesn't supply it
+  const [fetchedPrediction, setFetchedPrediction] = useState<string | null>(null);
+  const userPrediction = userPredictedTeam !== undefined ? userPredictedTeam : fetchedPrediction;
 
   const team1 = getTeamConfig(match.team_1);
   const team2 = getTeamConfig(match.team_2);
   const winnerTeam = match.winner ? getTeamConfig(match.winner) : null;
 
   useEffect(() => {
-    // Fetch prediction counts for this match
+    // Always fetch community counts for this match
     fetch(`/api/predictions/counts?match_id=${match.id}`)
       .then((r) => r.json())
       .then((d) => { if (d.counts) setCounts(d.counts); })
       .catch(() => {});
 
-    // Check user's own prediction
-    if (userId) {
+    // Only fetch user prediction if not supplied by parent (avoids N duplicate calls)
+    if (userId && userPredictedTeam === undefined) {
       fetch(`/api/predictions?user_id=${userId}`)
         .then((r) => r.json())
         .then((d) => {
           const pred = d.predictions?.find((p: { match_id: string; predicted_team: string }) => p.match_id === match.id);
-          if (pred) setUserPrediction(pred.predicted_team);
+          if (pred) setFetchedPrediction(pred.predicted_team);
         })
         .catch(() => {});
     }
-  }, [match.id, userId]);
-
-  const totalVotes = counts
-    ? counts.total
-    : match.initial_count_team_1 + match.initial_count_team_2;
+  }, [match.id, userId, userPredictedTeam]);
 
   const t1Count = counts
     ? match.initial_count_team_1 + counts.team_1
@@ -54,6 +54,8 @@ export function ResultMatchCard({ match, userId }: ResultMatchCardProps) {
     ? match.initial_count_team_2 + counts.team_2
     : match.initial_count_team_2;
   const total = t1Count + t2Count;
+  // Always show seeds + real votes so the label matches the bar
+  const totalVotes = total;
   const t1Pct = total > 0 ? Math.round((t1Count / total) * 100) : 50;
   const t2Pct = 100 - t1Pct;
 
@@ -167,9 +169,17 @@ export function ResultMatchCard({ match, userId }: ResultMatchCardProps) {
               ? "bg-green-500/10 border border-green-500/20 text-green-400"
               : "bg-gray-500/10 border border-gray-500/20 text-gray-500"
           }`}>
-            {userPrediction === match.winner
-              ? `🎯 You picked ${userPrediction} — Correct! +${userPrediction !== (match.team_1_probability >= match.team_2_probability ? match.team_1 : match.team_2) ? "1,500" : "1,000"} pts`
-              : `You picked ${userPrediction} — Better luck next time`}
+            {(() => {
+              if (userPrediction !== match.winner) {
+                return `You picked ${userPrediction} — Better luck next time`;
+              }
+              const aiFavourite = match.team_1_probability >= match.team_2_probability ? match.team_1 : match.team_2;
+              const isUnderdog = userPrediction !== aiFavourite;
+              const beatAI = userPrediction !== aiFavourite; // different pick from AI and correct
+              const basePoints = isUnderdog ? 1500 : 1000;
+              const total = basePoints + (beatAI ? 500 : 0);
+              return `🎯 You picked ${userPrediction} — Correct! +${total.toLocaleString("en-IN")} pts`;
+            })()}
           </div>
         )}
       </div>

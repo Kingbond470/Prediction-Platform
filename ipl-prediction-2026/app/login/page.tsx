@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/Button";
 import { setFavoriteTeam } from "@/app/components/ThemeProvider";
@@ -11,6 +11,11 @@ export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Redirect already-logged-in users to home
+  useEffect(() => {
+    if (localStorage.getItem("userId")) router.replace("/");
+  }, [router]);
 
   const isValid = phone.length === 10 && username.trim().length >= 3;
 
@@ -39,6 +44,7 @@ export default function LoginPage() {
         // Signal NavAuth (in the shared layout) to re-read username immediately
         window.dispatchEvent(new CustomEvent("authChanged"));
         router.push("/");
+        router.refresh();
       } else {
         setError(data.error || "Login failed. Please try again.");
       }

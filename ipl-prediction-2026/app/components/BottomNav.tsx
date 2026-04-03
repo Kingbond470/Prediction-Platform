@@ -32,7 +32,7 @@ export function BottomNav() {
             <a
               key={tab.href}
               href={tab.href}
-              className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 active:opacity-70 transition-opacity"
+              className="relative flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 active:opacity-70 transition-opacity"
             >
               <span
                 className="text-[22px] transition-transform duration-200"

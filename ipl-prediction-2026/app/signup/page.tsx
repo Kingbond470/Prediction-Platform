@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/Button";
 import { TEAM_CONFIG } from "@/app/lib/teams";
@@ -70,6 +70,11 @@ function Field({
 // ── Main form ─────────────────────────────────────────────────────────────────
 function SignupForm() {
   const router = useRouter();
+
+  // Redirect already-logged-in users to home
+  useEffect(() => {
+    if (localStorage.getItem("userId")) router.replace("/");
+  }, [router]);
 
   // Required fields
   const [firstName, setFirstName] = useState("");

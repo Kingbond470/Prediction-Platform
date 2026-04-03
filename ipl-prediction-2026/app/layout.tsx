@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { NavAuth } from "./components/NavAuth";
+import { BottomNav } from "./components/BottomNav";
 import { Analytics } from "@vercel/analytics/react";
 import { PostHogProvider } from "./components/PostHogProvider";
 import ThemeProvider from "./components/ThemeProvider";
@@ -112,9 +113,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* Premium Navigation */}
           <nav className="sticky top-0 z-50 border-b border-white/[0.07]" style={{ background: "rgba(7,17,31,0.85)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)" }}>
-            <div className="max-w-5xl mx-auto px-4 h-14 flex justify-between items-center">
-              {/* Logo — uses team color */}
-              <a href="/" className="flex items-center gap-2.5 group">
+            <div className="max-w-5xl mx-auto px-4 h-14 flex justify-between items-center gap-4">
+              {/* Logo */}
+              <a href="/" className="flex items-center gap-2.5 group shrink-0">
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center text-sm group-hover:scale-105 transition-smooth"
                   style={{
@@ -124,23 +125,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 >
                   🏏
                 </div>
-                <div>
-                  <span className="font-display font-bold text-white text-sm tracking-wide">IPL PREDICTION</span>
-                  <span className="hidden sm:inline text-gray-500 text-xs ml-1">2026</span>
-                </div>
+                <span className="font-display font-bold text-white text-sm tracking-wide">IPL PREDICTION <span className="text-gray-500 font-normal">2026</span></span>
               </a>
 
-              {/* Center: Live badge — team colored */}
-              <div
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase"
-                style={{
-                  background: "rgba(var(--tc-r,239), var(--tc-g,68), var(--tc-b,68), 0.1)",
-                  border: "1px solid rgba(var(--tc-r,239), var(--tc-g,68), var(--tc-b,68), 0.3)",
-                  color: "var(--tc, #EF4444)",
-                }}
-              >
-                <span className="live-dot" />
-                SEASON LIVE
+              {/* Center: desktop page links */}
+              <div className="hidden sm:flex items-center gap-1">
+                {[
+                  { href: "/", label: "Home" },
+                  { href: "/leaderboard", label: "Leaderboard" },
+                ].map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/[0.06] transition-smooth"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+                <div
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase ml-1"
+                  style={{
+                    background: "rgba(var(--tc-r,239), var(--tc-g,68), var(--tc-b,68), 0.1)",
+                    border: "1px solid rgba(var(--tc-r,239), var(--tc-g,68), var(--tc-b,68), 0.3)",
+                    color: "var(--tc, #EF4444)",
+                  }}
+                >
+                  <span className="live-dot" />
+                  SEASON LIVE
+                </div>
               </div>
 
               {/* Right */}
@@ -148,10 +160,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </nav>
 
-          {/* Main content */}
-          <main className="relative z-10 max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
+          {/* Main content — extra bottom padding on mobile for bottom nav */}
+          <main className="relative z-10 max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-24 sm:pb-6">
             {children}
           </main>
+
+          <BottomNav />
 
           {/* Footer */}
           <footer className="relative z-10 border-t border-white/[0.06] mt-16 py-8">
@@ -168,9 +182,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <p className="mt-1">© 2026 IPL Prediction. All rights reserved.</p>
                 </div>
                 <div className="flex gap-4 text-xs text-gray-600">
-                  <span>Privacy</span>
-                  <span>Terms</span>
-                  <span>Contact</span>
+                  <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy</a>
+                  <a href="/terms" className="hover:text-gray-400 transition-colors">Terms</a>
+                  <a href="mailto:hello@iplprediction2026.in" className="hover:text-gray-400 transition-colors">Contact</a>
                 </div>
               </div>
             </div>

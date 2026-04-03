@@ -193,6 +193,11 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes fadeOut {
+  from { opacity: 0.3; }
+  to   { opacity: 0; pointer-events: none; }
+}
+
 /* ── Modal: bottom-sheet on mobile, centered dialog on desktop ─── */
 .modal-container {
   position: fixed;

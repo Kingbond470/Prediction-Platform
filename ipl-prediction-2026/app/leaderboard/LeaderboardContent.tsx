@@ -96,6 +96,14 @@ export default function LeaderboardContent() {
   return (
     <div className="max-w-2xl mx-auto py-6 space-y-5 animate-slide-up">
 
+      {/* ── Back link (desktop — mobile uses bottom nav) ─────────── */}
+      <a
+        href="/"
+        className="hidden sm:flex items-center gap-1.5 text-sm text-gray-500 hover:text-white transition-smooth -mb-1"
+      >
+        ← Back to Matches
+      </a>
+
       {/* ── Header ──────────────────────────────────────────────── */}
       <div className="text-center">
         <div

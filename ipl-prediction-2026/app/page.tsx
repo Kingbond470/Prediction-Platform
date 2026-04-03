@@ -246,8 +246,9 @@ export default async function HomePage() {
           ))}
         </div>
 
-        {/* Scroll cue */}
-        <div className="mt-10 flex flex-col items-center gap-1 opacity-30 animate-bounce">
+        {/* Scroll cue — fades out after 3s */}
+        <div className="mt-10 flex flex-col items-center gap-1 opacity-30 animate-bounce"
+          style={{ animation: "bounce 1s ease-in-out 3, fadeOut 0.5s ease 3s forwards" }}>
           <div className="w-0.5 h-6 rounded-full bg-white" />
           <div className="text-xs text-white">scroll</div>
         </div>

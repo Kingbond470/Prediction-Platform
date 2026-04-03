@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { supabase, Match } from "@/lib/supabase";
 import { matchToSlug, findMatchBySlug } from "@/lib/matchSlug";
-import { getTeamConfig } from "@/app/lib/teams";
 import PredictContent from "./PredictContent";
 
 // ─── Data helpers ─────────────────────────────────────────────────────────────
@@ -46,8 +45,6 @@ export async function generateMetadata({
     return { title: "Match Not Found | IPL Prediction 2026" };
   }
 
-  const t1 = getTeamConfig(match.team_1);
-  const t2 = getTeamConfig(match.team_2);
   const matchDate = new Date(match.match_date).toLocaleDateString("en-IN", {
     day: "numeric",
     month: "long",
@@ -85,11 +82,19 @@ export async function generateMetadata({
       url: `https://iplprediction2026.in/predict/${params.slug}`,
       images: [
         {
-          url: `/og-image.png`,
+          url: `https://iplprediction2026.in/api/og?team1=${match.team_1}&team2=${match.team_2}&match=${match.match_number}&prob1=${match.team_1_probability}&prob2=${match.team_2_probability}&venue=${encodeURIComponent(match.venue)}`,
           width: 1200,
           height: 630,
           alt: `${match.team_1} vs ${match.team_2} IPL 2026 Prediction`,
         },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [
+        `https://iplprediction2026.in/api/og?team1=${match.team_1}&team2=${match.team_2}&match=${match.match_number}&prob1=${match.team_1_probability}&prob2=${match.team_2_probability}&venue=${encodeURIComponent(match.venue)}`,
       ],
     },
     alternates: {
@@ -135,7 +140,7 @@ export default async function PredictPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEventSchema) }}
       />
-      <PredictContent match={match} slug={params.slug} />
+      <PredictContent match={match} />
     </>
   );
 }

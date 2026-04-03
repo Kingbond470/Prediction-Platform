@@ -6,14 +6,11 @@ import { TeamBadge } from "@/app/components/TeamBadge";
 import { CountdownTimer } from "@/app/components/CountdownTimer";
 import { Button } from "@/app/components/Button";
 import { getTeamConfig } from "@/app/lib/teams";
-import { matchToSlug } from "@/lib/matchSlug";
-
 interface Props {
   match: Match;
-  slug: string;
 }
 
-export default function PredictContent({ match, slug }: Props) {
+export default function PredictContent({ match }: Props) {
   const router = useRouter();
   const team1 = getTeamConfig(match.team_1);
   const team2 = getTeamConfig(match.team_2);
@@ -179,6 +176,27 @@ export default function PredictContent({ match, slug }: Props) {
         </div>
         <p className="text-xs text-gray-600 pt-1">
           Free fan prediction contest — no money, no betting, pure cricket knowledge.
+        </p>
+      </div>
+
+      {/* ── Match Preview blurb (indexed by Google) ──────────── */}
+      <div className="glass rounded-2xl p-5">
+        <h2 className="font-display font-bold text-white text-base mb-2">
+          {match.team_1} vs {match.team_2} — Match Preview
+        </h2>
+        <p className="text-gray-400 text-sm leading-relaxed">
+          {match.team_1} take on {match.team_2} in IPL 2026 Match #{match.match_number} at{" "}
+          {match.venue}, {match.city}.{" "}
+          Bookmaker odds give <strong className="text-white">{favTeam}</strong> a{" "}
+          <strong className="text-white">{favPct}%</strong> win probability, making{" "}
+          <strong className="text-white">{underdogTeam}</strong> the underdog at {underdogPct}%.{" "}
+          {underdogPct <= 40
+            ? `Picking ${underdogTeam} and winning earns you 1.5× points — a great chance to climb the leaderboard fast.`
+            : "This looks like a close contest — your cricket instincts could easily beat the AI here."}
+        </p>
+        <p className="text-gray-600 text-xs mt-2 leading-relaxed">
+          Free IPL fan prediction — no money, no betting, pure cricket knowledge.
+          Over {(match.initial_count_team_1 + match.initial_count_team_2).toLocaleString("en-IN")} fans have already voted on this match.
         </p>
       </div>
 

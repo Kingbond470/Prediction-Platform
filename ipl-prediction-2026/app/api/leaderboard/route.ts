@@ -101,7 +101,9 @@ export async function GET(request: NextRequest) {
     const rankings = rankingsRes.data || [];
     const totalPlayers = countRes.count ?? rankings.length;
 
-    // ── Weekly stats for the requesting user (piggybacked onto all-time call) ──
+    // Get the requesting user's own rank + weekly stats in parallel
+    let userRank = null;
+    let rival = null;
     let weeklyStats = null;
     if (userId) {
       const now = new Date();
@@ -111,17 +113,23 @@ export async function GET(request: NextRequest) {
       weekStart.setUTCDate(now.getUTCDate() - daysFromMonday);
       weekStart.setUTCHours(0, 0, 0, 0);
 
-      const { data: wp } = await supabase
-        .from("predictions")
-        .select("points_earned, is_correct, ai_predicted_team, predicted_team")
-        .eq("user_id", userId)
-        .gte("created_at", weekStart.toISOString())
-        .not("points_earned", "is", null);
+      const [rankRes, streakRes, wpRes] = await Promise.all([
+        supabase.from("leaderboard_humans").select("*").eq("id", userId).single(),
+        supabase.from("users").select("current_streak, max_streak").eq("id", userId).single(),
+        supabase
+          .from("predictions")
+          .select("points_earned, is_correct, ai_predicted_team, predicted_team")
+          .eq("user_id", userId)
+          .gte("created_at", weekStart.toISOString())
+          .not("points_earned", "is", null),
+      ]);
 
+      // Weekly stats
+      const wp = wpRes.data;
       if (wp && wp.length > 0) {
-        const correct  = wp.filter((p) => p.is_correct).length;
-        const points   = wp.reduce((s, p) => s + (p.points_earned ?? 0), 0);
-        const beatAI   = wp.filter((p) => p.is_correct && p.ai_predicted_team !== p.predicted_team).length;
+        const correct = wp.filter((p) => p.is_correct).length;
+        const points  = wp.reduce((s, p) => s + (p.points_earned ?? 0), 0);
+        const beatAI  = wp.filter((p) => p.is_correct && p.ai_predicted_team !== p.predicted_team).length;
         weeklyStats = {
           predictions: wp.length,
           correct,
@@ -132,16 +140,6 @@ export async function GET(request: NextRequest) {
           week_start: weekStart.toISOString(),
         };
       }
-    }
-
-    // Get the requesting user's own rank (may be outside top 50)
-    let userRank = null;
-    let rival = null;
-    if (userId) {
-      const [rankRes, streakRes] = await Promise.all([
-        supabase.from("leaderboard_humans").select("*").eq("id", userId).single(),
-        supabase.from("users").select("current_streak, max_streak").eq("id", userId).single(),
-      ]);
       if (rankRes.data) {
         userRank = {
           ...rankRes.data,

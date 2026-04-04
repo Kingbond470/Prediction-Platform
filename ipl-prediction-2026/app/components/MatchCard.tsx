@@ -243,14 +243,12 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
           </div>
         )}
 
-        {/* Crawlable link for Google — hidden visually but indexable */}
+        {/* Preview link */}
         <a
           href={`/predict/${matchToSlug(match)}`}
-          className="sr-only"
-          tabIndex={-1}
-          aria-label={`${match.team_1} vs ${match.team_2} IPL 2026 prediction`}
+          className="block text-center text-xs text-gray-600 hover:text-gray-400 transition-colors mt-3 py-1"
         >
-          {match.team_1} vs {match.team_2} prediction
+          Match Preview &amp; Key Players →
         </a>
       </div>
     </div>

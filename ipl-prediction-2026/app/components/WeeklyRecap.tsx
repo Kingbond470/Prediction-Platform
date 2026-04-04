@@ -24,9 +24,11 @@ function weekLabel(weekStart: string) {
 export default function WeeklyRecap({
   stats,
   username,
+  isLastWeek = false,
 }: {
   stats: WeeklyStats;
   username: string | null;
+  isLastWeek?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -64,7 +66,7 @@ export default function WeeklyRecap({
       <div className="flex items-center justify-between mb-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-yellow-400">
-            📅 This Week
+            📅 {isLastWeek ? "Last Week" : "This Week"}
           </p>
           <p className="text-[11px] text-gray-600 mt-0.5">{weekLabel(stats.week_start)}</p>
         </div>

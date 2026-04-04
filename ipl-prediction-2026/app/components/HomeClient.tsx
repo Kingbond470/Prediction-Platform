@@ -28,6 +28,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   const [votedTeams, setVotedTeams] = useState<Map<string, string>>(new Map());
   const [showWelcome, setShowWelcome] = useState(false);
   const [favTeam, setFavTeam] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [userRankData, setUserRankData] = useState<null | { id: string; rank: number; username: string; total_points: number; win_percentage: number; total_predictions: number; total_correct: number; beat_ai_count?: number; current_streak?: number }>(null);
   const [rival, setRival] = useState<null | { id: string; rank: number; username: string; total_points: number; win_percentage: number; total_predictions: number; total_correct: number; beat_ai_count?: number }>(null);
@@ -46,6 +47,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   useEffect(() => {
     const storedUserId = localStorage.getItem("userId");
     setUserId(storedUserId);
+    setUsername(localStorage.getItem("username"));
     setFavTeam(localStorage.getItem("favoriteTeam"));
 
     if (storedUserId) {
@@ -79,7 +81,20 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           setCurrentStreak(d.user_rank?.current_streak ?? 0);
           if (d.user_rank) setUserRankData(d.user_rank);
           if (d.rival) setRival(d.rival);
-          if (d.weekly_stats) setWeeklyStats(d.weekly_stats);
+          if (d.weekly_stats) {
+            setWeeklyStats(d.weekly_stats);
+            // Persist so Monday shows last week's recap
+            localStorage.setItem(`weeklyStats_${storedUserId}`, JSON.stringify(d.weekly_stats));
+          } else {
+            // No scored predictions this week — check if today is Mon and show last week
+            const isMonday = new Date().getDay() === 1;
+            if (isMonday) {
+              const saved = localStorage.getItem(`weeklyStats_${storedUserId}`);
+              if (saved) {
+                try { setWeeklyStats({ ...JSON.parse(saved), _isLastWeek: true }); } catch { /* ignore */ }
+              }
+            }
+          }
         })
         .catch((err) => {
           console.error("[HomeClient] failed to fetch leaderboard:", err);
@@ -249,19 +264,6 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
         </button>
       )}
 
-      {/* Rival card — only when user has a rank and there's someone to chase */}
-      {userRankData && rival && (
-        <RivalCard userRank={userRankData} rival={rival} />
-      )}
-
-      {/* Weekly Recap — only when user has scored predictions this week */}
-      {weeklyStats && weeklyStats.predictions > 0 && (
-        <WeeklyRecap stats={weeklyStats} username={typeof window !== "undefined" ? localStorage.getItem("username") : null} />
-      )}
-
-      {/* Daily Trivia */}
-      <DailyTrivia userId={userId} />
-
       {/* Tab bar */}
       <div className="flex gap-2 mb-5 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
         {tabs.map((tab) => (
@@ -312,6 +314,19 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           <MatchCard key={match.id} match={match} onPredict={handlePredict} alreadyVoted={votedMatchIds.has(match.id)} />
         ))
       )}
+
+      {/* ── Secondary engagement — below match list so predictions stay first ── */}
+      {userRankData && rival && (
+        <RivalCard userRank={userRankData} rival={rival} />
+      )}
+      {weeklyStats && weeklyStats.predictions > 0 && (
+        <WeeklyRecap
+          stats={weeklyStats}
+          username={username}
+          isLastWeek={(weeklyStats as { _isLastWeek?: boolean })._isLastWeek === true}
+        />
+      )}
+      <DailyTrivia userId={userId} />
 
       <PredictionModal
         isOpen={isModalOpen}

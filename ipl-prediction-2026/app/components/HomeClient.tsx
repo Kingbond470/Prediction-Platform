@@ -7,6 +7,7 @@ import { MatchCard } from "./MatchCard";
 import { ResultMatchCard } from "./ResultMatchCard";
 import { PredictionModal } from "./PredictionModal";
 import DailyTrivia from "./DailyTrivia";
+import RivalCard from "./RivalCard";
 import { getTeamConfig } from "@/app/lib/teams";
 import posthog from "posthog-js";
 
@@ -27,6 +28,8 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   const [showWelcome, setShowWelcome] = useState(false);
   const [favTeam, setFavTeam] = useState<string | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [userRankData, setUserRankData] = useState<null | { id: string; rank: number; username: string; total_points: number; win_percentage: number; total_predictions: number; total_correct: number; beat_ai_count?: number; current_streak?: number }>(null);
+  const [rival, setRival] = useState<null | { id: string; rank: number; username: string; total_points: number; win_percentage: number; total_predictions: number; total_correct: number; beat_ai_count?: number }>(null);
 
   const now = new Date();
 
@@ -71,13 +74,12 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
       fetch(`/api/leaderboard?user_id=${storedUserId}`)
         .then((r) => r.json())
         .then((d) => {
-          const streak = d.user_rank?.current_streak ?? 0;
-          setCurrentStreak(streak);
+          setCurrentStreak(d.user_rank?.current_streak ?? 0);
+          if (d.user_rank) setUserRankData(d.user_rank);
+          if (d.rival) setRival(d.rival);
         })
         .catch((err) => {
-          // Log so it shows up in Vercel function logs; swallow so the page
-          // still renders — the server rejects duplicate predictions anyway.
-          console.error("[HomeClient] failed to fetch user predictions:", err);
+          console.error("[HomeClient] failed to fetch leaderboard:", err);
         });
     }
 
@@ -242,6 +244,11 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
             </span>
           </div>
         </button>
+      )}
+
+      {/* Rival card — only when user has a rank and there's someone to chase */}
+      {userRankData && rival && (
+        <RivalCard userRank={userRankData} rival={rival} />
       )}
 
       {/* Daily Trivia */}

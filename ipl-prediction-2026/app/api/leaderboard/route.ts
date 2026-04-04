@@ -103,6 +103,7 @@ export async function GET(request: NextRequest) {
 
     // Get the requesting user's own rank (may be outside top 50)
     let userRank = null;
+    let rival = null;
     if (userId) {
       const [rankRes, streakRes] = await Promise.all([
         supabase.from("leaderboard_humans").select("*").eq("id", userId).single(),
@@ -114,6 +115,21 @@ export async function GET(request: NextRequest) {
           current_streak: streakRes.data?.current_streak ?? 0,
           max_streak:     streakRes.data?.max_streak ?? 0,
         };
+
+        // Rival = person ranked just above (defender if rank 1)
+        const rivalRank = userRank.rank === 1 ? 2 : userRank.rank - 1;
+        // Check if already in the fetched top-50 list first
+        const rivalInList = rankings.find((r) => r.rank === rivalRank);
+        if (rivalInList) {
+          rival = rivalInList;
+        } else if (rivalRank > 0) {
+          const { data: rivalData } = await supabase
+            .from("leaderboard_humans")
+            .select("*")
+            .eq("rank", rivalRank)
+            .maybeSingle();
+          rival = rivalData ?? null;
+        }
       }
     }
 
@@ -121,6 +137,7 @@ export async function GET(request: NextRequest) {
       success: true,
       top_10: rankings,       // keeping key name for backward compat
       user_rank: userRank,
+      rival,
       total_players: totalPlayers,
     });
   } catch {

@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { rateLimit, getIp } from "@/lib/rateLimit";
 import { NextRequest, NextResponse } from "next/server";
 
 // Mock question for dev/offline mode
@@ -30,7 +31,13 @@ async function getTodaysQuestion() {
 
 // ── GET /api/trivia?user_id=xxx ───────────────────────────────────────────────
 export async function GET(request: NextRequest) {
-  const userId = request.nextUrl.searchParams.get("user_id");
+  // Only serve personal answered-state to the authenticated user themselves
+  const cookieUserId = request.cookies.get("uid")?.value;
+  const queryUserId = request.nextUrl.searchParams.get("user_id");
+  // In production: ignore user_id param if it doesn't match the session cookie
+  const userId = process.env.NEXT_PUBLIC_SUPABASE_URL
+    ? (cookieUserId === queryUserId ? cookieUserId : null)
+    : queryUserId;
 
   // Dev / offline mode
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -88,14 +95,26 @@ export async function GET(request: NextRequest) {
 // ── POST /api/trivia ──────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
-    const { user_id, question_id, selected } = await request.json() as {
-      user_id: string;
-      question_id: number;
-      selected: string;
-    };
+    // Rate limit: 10 attempts per IP per hour (4 options × some tolerance)
+    const ip = getIp(request);
+    if (!rateLimit(`trivia:${ip}`, 10, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: "Too many requests. Try again later." }, { status: 429 });
+    }
 
-    if (!user_id || !question_id || !selected) {
-      return NextResponse.json({ error: "user_id, question_id and selected are required" }, { status: 400 });
+    const body = await request.json() as { user_id?: string; question_id: number; selected: string };
+
+    // Read user identity from session cookie — never trust the request body for auth
+    const cookieUserId = request.cookies.get("uid")?.value;
+    const user_id = cookieUserId || (process.env.NEXT_PUBLIC_SUPABASE_URL ? null : body.user_id);
+
+    if (!user_id) {
+      return NextResponse.json({ error: "Authentication required. Please log in." }, { status: 401 });
+    }
+
+    const { question_id, selected } = body;
+
+    if (!question_id || !selected) {
+      return NextResponse.json({ error: "question_id and selected are required" }, { status: 400 });
     }
     if (!["a", "b", "c", "d"].includes(selected)) {
       return NextResponse.json({ error: "selected must be a, b, c or d" }, { status: 400 });

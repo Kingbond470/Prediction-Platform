@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { rateLimit, getIp } from "@/lib/rateLimit";
 import { NextRequest, NextResponse } from "next/server";
 
 const IS_DEV = process.env.NODE_ENV !== "production";
@@ -12,6 +13,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Invalid phone number. Must be +91XXXXXXXXXX" },
         { status: 400 }
+      );
+    }
+
+    // 5 OTP requests per phone per 10 minutes — prevents Twilio bill drain
+    if (!rateLimit(`otp:${phone}`, 5, 10 * 60 * 1000)) {
+      return NextResponse.json(
+        { error: "Too many OTP requests. Please wait before trying again." },
+        { status: 429 }
       );
     }
 

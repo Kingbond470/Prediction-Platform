@@ -101,11 +101,15 @@ export async function GET(request: NextRequest) {
     const rankings = rankingsRes.data || [];
     const totalPlayers = countRes.count ?? rankings.length;
 
+    // Personal data (rank, rival, weekly stats) only returned to the authenticated user
+    const cookieUserId = request.cookies.get("uid")?.value;
+    const canSeePersonalData = !process.env.NEXT_PUBLIC_SUPABASE_URL || cookieUserId === userId;
+
     // Get the requesting user's own rank + weekly stats in parallel
     let userRank = null;
     let rival = null;
     let weeklyStats = null;
-    if (userId) {
+    if (userId && canSeePersonalData) {
       const now = new Date();
       const dayOfWeek = now.getUTCDay();
       const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;

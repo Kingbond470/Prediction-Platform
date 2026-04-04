@@ -6,6 +6,7 @@ import { Match } from "@/lib/supabase";
 import { MatchCard } from "./MatchCard";
 import { ResultMatchCard } from "./ResultMatchCard";
 import { PredictionModal } from "./PredictionModal";
+import DailyTrivia from "./DailyTrivia";
 import { getTeamConfig } from "@/app/lib/teams";
 import posthog from "posthog-js";
 
@@ -242,6 +243,9 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           </div>
         </button>
       )}
+
+      {/* Daily Trivia */}
+      <DailyTrivia userId={userId} />
 
       {/* Tab bar */}
       <div className="flex gap-2 mb-5 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">

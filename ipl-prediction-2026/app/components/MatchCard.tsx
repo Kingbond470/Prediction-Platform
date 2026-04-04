@@ -41,9 +41,6 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
   const team1 = getTeamConfig(match.team_1);
   const team2 = getTeamConfig(match.team_2);
 
-  const isHot =
-    match.team_1_probability >= 40 && match.team_1_probability <= 60;
-
   const oddsGap = Math.abs(match.team_1_probability - match.team_2_probability);
   const confidenceTier = oddsGap >= 30 ? "high" : oddsGap >= 12 ? "medium" : "low";
 
@@ -92,21 +89,18 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
             <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">
               Match #{match.match_number}
             </span>
-            {isHot && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400">
-                🔥 HOT
-              </span>
-            )}
+            {/* Insight badges — single neutral tone, max one shown */}
             {confidenceTier === "high" && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/12 border border-emerald-500/25 text-emerald-400">
-                🎯 AI High Confidence
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.12] text-gray-300">
+                🎯 Strong Favourite
               </span>
             )}
             {confidenceTier === "low" && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-500/12 border border-indigo-500/25 text-indigo-400">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.12] text-gray-300">
                 ⚖️ Toss-up
               </span>
             )}
+            {/* Urgency badges — red/amber reserved only for time pressure */}
             {urgencyTier === "critical" && !alreadyVoted && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/50 text-red-400 animate-pulse">
                 ⏰ Last chance!
@@ -117,6 +111,7 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
                 ⚡ Closing soon
               </span>
             )}
+            {/* Activity badge — green reserved for live signals */}
             {recentVotes !== null && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-500/12 border border-green-500/25 text-green-400 flex items-center gap-1">
                 <span className="live-dot" />

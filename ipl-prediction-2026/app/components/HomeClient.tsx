@@ -8,6 +8,7 @@ import { ResultMatchCard } from "./ResultMatchCard";
 import { PredictionModal } from "./PredictionModal";
 import DailyTrivia from "./DailyTrivia";
 import RivalCard from "./RivalCard";
+import WeeklyRecap from "./WeeklyRecap";
 import { getTeamConfig } from "@/app/lib/teams";
 import posthog from "posthog-js";
 
@@ -30,6 +31,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [userRankData, setUserRankData] = useState<null | { id: string; rank: number; username: string; total_points: number; win_percentage: number; total_predictions: number; total_correct: number; beat_ai_count?: number; current_streak?: number }>(null);
   const [rival, setRival] = useState<null | { id: string; rank: number; username: string; total_points: number; win_percentage: number; total_predictions: number; total_correct: number; beat_ai_count?: number }>(null);
+  const [weeklyStats, setWeeklyStats] = useState<null | { predictions: number; correct: number; wrong: number; points: number; beat_ai: number; accuracy: number; week_start: string }>(null);
 
   const now = new Date();
 
@@ -77,6 +79,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           setCurrentStreak(d.user_rank?.current_streak ?? 0);
           if (d.user_rank) setUserRankData(d.user_rank);
           if (d.rival) setRival(d.rival);
+          if (d.weekly_stats) setWeeklyStats(d.weekly_stats);
         })
         .catch((err) => {
           console.error("[HomeClient] failed to fetch leaderboard:", err);
@@ -249,6 +252,11 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
       {/* Rival card — only when user has a rank and there's someone to chase */}
       {userRankData && rival && (
         <RivalCard userRank={userRankData} rival={rival} />
+      )}
+
+      {/* Weekly Recap — only when user has scored predictions this week */}
+      {weeklyStats && weeklyStats.predictions > 0 && (
+        <WeeklyRecap stats={weeklyStats} username={typeof window !== "undefined" ? localStorage.getItem("username") : null} />
       )}
 
       {/* Daily Trivia */}

@@ -101,6 +101,39 @@ export async function GET(request: NextRequest) {
     const rankings = rankingsRes.data || [];
     const totalPlayers = countRes.count ?? rankings.length;
 
+    // ── Weekly stats for the requesting user (piggybacked onto all-time call) ──
+    let weeklyStats = null;
+    if (userId) {
+      const now = new Date();
+      const dayOfWeek = now.getUTCDay();
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const weekStart = new Date(now);
+      weekStart.setUTCDate(now.getUTCDate() - daysFromMonday);
+      weekStart.setUTCHours(0, 0, 0, 0);
+
+      const { data: wp } = await supabase
+        .from("predictions")
+        .select("points_earned, is_correct, ai_predicted_team, predicted_team")
+        .eq("user_id", userId)
+        .gte("created_at", weekStart.toISOString())
+        .not("points_earned", "is", null);
+
+      if (wp && wp.length > 0) {
+        const correct  = wp.filter((p) => p.is_correct).length;
+        const points   = wp.reduce((s, p) => s + (p.points_earned ?? 0), 0);
+        const beatAI   = wp.filter((p) => p.is_correct && p.ai_predicted_team !== p.predicted_team).length;
+        weeklyStats = {
+          predictions: wp.length,
+          correct,
+          wrong: wp.length - correct,
+          points,
+          beat_ai: beatAI,
+          accuracy: Math.round((correct / wp.length) * 100),
+          week_start: weekStart.toISOString(),
+        };
+      }
+    }
+
     // Get the requesting user's own rank (may be outside top 50)
     let userRank = null;
     let rival = null;
@@ -138,6 +171,7 @@ export async function GET(request: NextRequest) {
       top_10: rankings,       // keeping key name for backward compat
       user_rank: userRank,
       rival,
+      weekly_stats: weeklyStats,
       total_players: totalPlayers,
     });
   } catch {

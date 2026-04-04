@@ -134,11 +134,52 @@ export default async function PredictPage({
     ],
   };
 
+  const favourite =
+    match.team_1_probability >= match.team_2_probability ? match.team_1 : match.team_2;
+  const favPct = Math.max(match.team_1_probability, match.team_2_probability);
+  const underdog =
+    match.team_1_probability < match.team_2_probability ? match.team_1 : match.team_2;
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `Who will win ${match.team_1} vs ${match.team_2} IPL 2026?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `Our AI model gives ${favourite} a ${favPct}% chance of winning IPL 2026 Match #${match.match_number} at ${match.venue}. However, cricket is unpredictable — ${underdog} can pull off an upset. Make your own prediction and beat the AI!`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Where is ${match.team_1} vs ${match.team_2} IPL 2026 being played?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `IPL 2026 Match #${match.match_number} between ${match.team_1} and ${match.team_2} is being played at ${match.venue}, ${match.city}.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `How can I predict ${match.team_1} vs ${match.team_2} and win points?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `Sign up free on IPL Prediction 2026, pick your winner, and earn 1,000 points for a correct prediction. If you beat the AI's pick, you get an extra +500 bonus points. Pick the underdog and win for 1,500 points total!`,
+        },
+      },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsEventSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <PredictContent match={match} />
     </>

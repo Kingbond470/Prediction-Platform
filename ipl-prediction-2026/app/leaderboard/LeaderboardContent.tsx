@@ -32,6 +32,7 @@ export default function LeaderboardContent() {
   const username = typeof window !== "undefined" ? localStorage.getItem("username") : null;
   const favTeam  = typeof window !== "undefined" ? localStorage.getItem("favoriteTeam") : null;
   const teamCfg  = favTeam ? getTeamConfig(favTeam) : null;
+  const [rankDelta, setRankDelta] = useState<number | null>(null);
 
   const fetchLeaderboard = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -43,10 +44,22 @@ export default function LeaderboardContent() {
       const res = await fetch(`/api/leaderboard?${params.toString()}`);
       const d = await res.json();
       setLeaderboard(d.top_10 || []);
-      setUserRank(d.user_rank || null);
       setTotalPlayers(d.total_players || 0);
       setLastUpdated(new Date());
       setSecondsAgo(0);
+
+      // Rank delta: compare new rank with last stored rank
+      const newRank: LeaderboardEntry | null = d.user_rank || null;
+      setUserRank(newRank);
+      if (newRank && userId && period === "alltime") {
+        const storageKey = `lastRank_${userId}`;
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          const delta = Number(stored) - newRank.rank; // positive = climbed
+          setRankDelta(delta !== 0 ? delta : null);
+        }
+        localStorage.setItem(storageKey, String(newRank.rank));
+      }
     } catch {
       // keep stale data on error
     } finally {
@@ -137,7 +150,14 @@ export default function LeaderboardContent() {
           </p>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <span className="font-display font-black text-4xl text-white shrink-0">#{userRank.rank}</span>
+              <div className="flex flex-col items-center shrink-0">
+                <span className="font-display font-black text-4xl text-white">#{userRank.rank}</span>
+                {rankDelta !== null && (
+                  <span className={`text-[10px] font-black mt-0.5 ${rankDelta > 0 ? "text-green-400" : "text-red-400"}`}>
+                    {rankDelta > 0 ? `↑ ${rankDelta}` : `↓ ${Math.abs(rankDelta)}`}
+                  </span>
+                )}
+              </div>
               <div className="min-w-0">
                 <p className="font-semibold text-white truncate">{userRank.username}</p>
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">

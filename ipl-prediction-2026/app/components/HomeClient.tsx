@@ -25,6 +25,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   const [votedTeams, setVotedTeams] = useState<Map<string, string>>(new Map());
   const [showWelcome, setShowWelcome] = useState(false);
   const [favTeam, setFavTeam] = useState<string | null>(null);
+  const [currentStreak, setCurrentStreak] = useState(0);
 
   const now = new Date();
 
@@ -64,6 +65,13 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           const preds: { match_id: string; predicted_team: string }[] = d.predictions || [];
           setVotedMatchIds(new Set(preds.map((p) => p.match_id)));
           setVotedTeams(new Map(preds.map((p) => [p.match_id, p.predicted_team])));
+        })
+
+      fetch(`/api/leaderboard?user_id=${storedUserId}`)
+        .then((r) => r.json())
+        .then((d) => {
+          const streak = d.user_rank?.current_streak ?? 0;
+          setCurrentStreak(streak);
         })
         .catch((err) => {
           // Log so it shows up in Vercel function logs; swallow so the page
@@ -144,6 +152,14 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
     activeTab === "upcoming" ? upcomingMatches :
     resultMatches;
 
+  // Streak-at-risk: user has a streak + there's an unpredicted match closing within 6 hours
+  const streakAtRiskMatch = currentStreak >= 2
+    ? upcomingMatches.find((m) => {
+        const minsLeft = (new Date(m.match_date).getTime() - Date.now()) / 60_000;
+        return minsLeft > 0 && minsLeft < 360 && !votedMatchIds.has(m.id);
+      }) ?? null
+    : null;
+
   const favTeamCfg = favTeam ? getTeamConfig(favTeam) : null;
   const favTeamNextMatch = favTeam
     ? upcomingMatches.find(
@@ -166,6 +182,30 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           </div>
           <button onClick={() => setShowWelcome(false)} className="text-gray-500 hover:text-white transition-smooth shrink-0 text-lg">✕</button>
         </div>
+      )}
+
+      {/* Streak-at-risk banner */}
+      {streakAtRiskMatch && (
+        <button
+          onClick={() => handlePredict(streakAtRiskMatch)}
+          className="w-full text-left mb-4 px-4 py-3.5 rounded-2xl flex items-center justify-between gap-3 border border-red-500/40 animate-pulse-slow"
+          style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.14), rgba(239,68,68,0.05))" }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl shrink-0">🔥</span>
+            <div>
+              <p className="text-white font-bold text-sm">
+                Your {currentStreak}-match streak is at risk!
+              </p>
+              <p className="text-red-400 text-xs mt-0.5">
+                Predict {streakAtRiskMatch.team_1} vs {streakAtRiskMatch.team_2} before it&apos;s too late →
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-bold px-3 py-1 rounded-full shrink-0 bg-red-500 text-white">
+            Predict Now
+          </span>
+        </button>
       )}
 
       {/* Favourite team next match — personalised nudge */}

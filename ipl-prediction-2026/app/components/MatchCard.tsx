@@ -29,6 +29,15 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
   const votingOpen =
     match.status === "upcoming" && new Date() < new Date(match.match_date);
 
+  // Urgency tiers: <1h = critical, <3h = urgent, <6h = soon
+  const minsToMatch = votingOpen
+    ? Math.floor((new Date(match.match_date).getTime() - Date.now()) / 60_000)
+    : Infinity;
+  const urgencyTier: "critical" | "urgent" | "soon" | null =
+    minsToMatch < 60  ? "critical" :
+    minsToMatch < 180 ? "urgent"   :
+    minsToMatch < 360 ? "soon"     : null;
+
   const team1 = getTeamConfig(match.team_1);
   const team2 = getTeamConfig(match.team_2);
 
@@ -47,9 +56,17 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
     <div
       className="relative rounded-2xl overflow-hidden mb-5 transition-all duration-300 hover:-translate-y-1 group"
       style={{
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.07)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+        background: urgencyTier === "critical"
+          ? "rgba(239,68,68,0.05)"
+          : "rgba(255,255,255,0.03)",
+        border: urgencyTier === "critical"
+          ? "1px solid rgba(239,68,68,0.35)"
+          : urgencyTier === "urgent"
+          ? "1px solid rgba(245,158,11,0.3)"
+          : "1px solid rgba(255,255,255,0.07)",
+        boxShadow: urgencyTier === "critical"
+          ? "0 8px 32px rgba(0,0,0,0.4), 0 0 24px rgba(239,68,68,0.12)"
+          : "0 8px 32px rgba(0,0,0,0.4)",
       }}
     >
       {/* Top glow accent line */}
@@ -88,6 +105,16 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
             {confidenceTier === "low" && (
               <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-500/12 border border-indigo-500/25 text-indigo-400">
                 ⚖️ Toss-up
+              </span>
+            )}
+            {urgencyTier === "critical" && !alreadyVoted && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/50 text-red-400 animate-pulse">
+                ⏰ Last chance!
+              </span>
+            )}
+            {urgencyTier === "urgent" && !alreadyVoted && (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-400">
+                ⚡ Closing soon
               </span>
             )}
             {recentVotes !== null && (

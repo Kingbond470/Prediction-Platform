@@ -329,6 +329,29 @@ export default function LeaderboardContent() {
                 <LeaderboardRow user={userRank} idx={userRank.rank - 1} isMe={true} />
               </>
             )}
+
+            {/* Ghost row for guests — "this could be you" */}
+            {!userId && (
+              <>
+                <div className="flex items-center gap-2 py-1">
+                  <div className="flex-1 border-t border-white/[0.06]" />
+                  <span className="text-xs text-gray-600 font-bold">· · ·</span>
+                  <div className="flex-1 border-t border-white/[0.06]" />
+                </div>
+                <a
+                  href="/signup"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all hover:bg-white/[0.04] active:scale-[0.98]"
+                  style={{ border: "1px dashed rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.04)" }}
+                >
+                  <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-gray-600 bg-white/[0.06] shrink-0">?</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-400">👤 You</p>
+                    <p className="text-xs text-gray-600">Sign up to claim your spot →</p>
+                  </div>
+                  <span className="text-xs font-bold text-red-400 shrink-0">Join Free</span>
+                </a>
+              </>
+            )}
           </div>
         )}
       </div>

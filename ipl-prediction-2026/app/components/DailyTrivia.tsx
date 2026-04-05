@@ -164,7 +164,7 @@ export default function DailyTrivia({ userId }: { userId: string | null }) {
               return (
                 <button
                   key={key}
-                  disabled={isAnswered || submitting}
+                  disabled={isAnswered || submitting || !userId}
                   onClick={() => setSelected(key)}
                   className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all duration-200 disabled:cursor-default"
                   style={{
@@ -189,7 +189,21 @@ export default function DailyTrivia({ userId }: { userId: string | null }) {
           </div>
 
           {/* Submit / result */}
-          {!isAnswered && (
+          {!isAnswered && !userId && (
+            <a
+              href="/signup"
+              className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95"
+              style={{
+                background: "rgba(245,158,11,0.15)",
+                border: "1px solid rgba(245,158,11,0.35)",
+                color: "#F59E0B",
+              }}
+            >
+              🔐 Sign up free to answer · earn +100 pts →
+            </a>
+          )}
+
+          {!isAnswered && userId && (
             <button
               disabled={!selected || submitting}
               onClick={handleSubmit}
@@ -219,11 +233,6 @@ export default function DailyTrivia({ userId }: { userId: string | null }) {
             </div>
           )}
 
-          {!userId && state === "question" && (
-            <p className="mt-3 text-xs text-center text-gray-600">
-              <a href="/signup" className="text-yellow-500 hover:text-yellow-400 underline">Sign in</a> to earn points for correct answers
-            </p>
-          )}
         </div>
       )}
     </div>

@@ -77,6 +77,12 @@ function SignupForm() {
     if (localStorage.getItem("userId")) router.replace("/");
   }, [router]);
 
+  // Match context — shown when guest came from "BEAT THE AI"
+  const [pendingMatchTeams] = useState<string>(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("selectedMatchTeams") || "";
+    return "";
+  });
+
   // Referral code from ?ref= param or localStorage
   const [referralCode] = useState<string>(() => {
     const fromUrl = searchParams.get("ref") || "";
@@ -172,6 +178,18 @@ function SignupForm() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-10 px-4">
       <div className="w-full max-w-sm">
+
+        {/* Match context banner — shown when guest clicked "BEAT THE AI" */}
+        {pendingMatchTeams && !referralCode && (
+          <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/25 text-red-300 text-sm">
+            <span className="text-xl shrink-0">🏏</span>
+            <span>
+              You&apos;re one step from predicting{" "}
+              <span className="font-semibold text-white">{pendingMatchTeams}</span>.
+              Sign up in 30 seconds →
+            </span>
+          </div>
+        )}
 
         {/* Referral banner */}
         {referralCode && (

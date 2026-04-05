@@ -117,6 +117,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
     });
     if (!userId) {
       localStorage.setItem("selectedMatchId", match.id);
+      localStorage.setItem("selectedMatchTeams", `${match.team_1} vs ${match.team_2}`);
       router.push("/signup");
       return;
     }
@@ -208,6 +209,39 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
             </div>
           </div>
           <button onClick={() => setShowWelcome(false)} className="text-gray-500 hover:text-white transition-smooth shrink-0 text-lg">✕</button>
+        </div>
+      )}
+
+      {/* Guest value-prop banner — hidden once logged in */}
+      {!userId && (
+        <div
+          className="mb-5 rounded-2xl p-5"
+          style={{
+            background: "linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.03))",
+            border: "1px solid rgba(239,68,68,0.2)",
+          }}
+        >
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <p className="font-display font-black text-white text-xl leading-tight mb-1">
+                Can <span className="text-gradient">You</span> Beat the AI?
+              </p>
+              <p className="text-gray-400 text-sm">Free fan prediction · No money · Pure cricket.</p>
+            </div>
+            <span className="text-3xl shrink-0">🏆</span>
+          </div>
+          <ul className="space-y-1.5 mb-4 text-sm text-gray-300">
+            <li className="flex items-center gap-2"><span className="text-green-400 font-bold">✓</span> Pick today&apos;s match winner</li>
+            <li className="flex items-center gap-2"><span className="text-green-400 font-bold">✓</span> Beat the AI for +500 bonus pts</li>
+            <li className="flex items-center gap-2"><span className="text-green-400 font-bold">✓</span> Climb the leaderboard with 10,000+ fans</li>
+          </ul>
+          <a
+            href="/signup"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-95"
+            style={{ background: "rgba(239,68,68,0.25)", border: "1px solid rgba(239,68,68,0.4)" }}
+          >
+            🏏 Join Free — Takes 30 Seconds →
+          </a>
         </div>
       )}
 

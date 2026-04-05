@@ -1,6 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
+const IPL_TEAMS = ["CSK", "MI", "RCB", "KKR", "DC", "SRH", "PBKS", "RR", "GT", "LSG"] as const;
+
+const IPL_VENUES: { venue: string; city: string }[] = [
+  { venue: "Wankhede Stadium",             city: "Mumbai" },
+  { venue: "MA Chidambaram Stadium",        city: "Chennai" },
+  { venue: "Eden Gardens",                  city: "Kolkata" },
+  { venue: "M Chinnaswamy Stadium",         city: "Bengaluru" },
+  { venue: "Arun Jaitley Stadium",          city: "Delhi" },
+  { venue: "Rajiv Gandhi Intl Cricket Stadium", city: "Hyderabad" },
+  { venue: "Narendra Modi Stadium",         city: "Ahmedabad" },
+  { venue: "Sawai Mansingh Stadium",        city: "Jaipur" },
+  { venue: "BRSABV Ekana Cricket Stadium",  city: "Lucknow" },
+  { venue: "PCA Stadium",                   city: "Mohali" },
+  { venue: "Himachal Pradesh Cricket Association Stadium", city: "Dharamsala" },
+  { venue: "Brabourne Stadium",             city: "Mumbai" },
+];
 
 interface Match {
   id: string;
@@ -27,9 +44,27 @@ export default function AdminContent() {
   const [authed, setAuthed] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(false);
-  const [scoring, setScoring] = useState<string | null>(null); // match_id being scored
+  const [scoring, setScoring] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, ScoringResult>>({});
   const [error, setError] = useState("");
+
+  // ── Add Match form ─────────────────────────────────────────────────────────
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addSubmitting, setAddSubmitting] = useState(false);
+  const [addSuccess, setAddSuccess] = useState("");
+  const [addError, setAddError] = useState("");
+  const [newMatch, setNewMatch] = useState({
+    match_number: "",
+    team_1: "",
+    team_2: "",
+    venue: "",
+    city: "",
+    match_date: "",
+    team_1_probability: "55",
+    team_2_probability: "45",
+    initial_count_team_1: "500",
+    initial_count_team_2: "500",
+  });
 
   const loadMatches = async (adminSecret: string) => {
     setLoading(true);
@@ -84,6 +119,45 @@ export default function AdminContent() {
       setError("Network error scoring match");
     } finally {
       setScoring(null);
+    }
+  };
+
+  const handleAddMatch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddError("");
+    setAddSuccess("");
+    const p1 = Number(newMatch.team_1_probability);
+    const p2 = Number(newMatch.team_2_probability);
+    if (p1 + p2 !== 100) {
+      setAddError("Probabilities must add up to 100");
+      return;
+    }
+    setAddSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/matches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-secret": secret },
+        body: JSON.stringify({
+          ...newMatch,
+          match_number: Number(newMatch.match_number),
+          team_1_probability: p1,
+          team_2_probability: p2,
+          initial_count_team_1: Number(newMatch.initial_count_team_1),
+          initial_count_team_2: Number(newMatch.initial_count_team_2),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAddSuccess(`Match #${data.match.match_number} — ${data.match.team_1} vs ${data.match.team_2} added!`);
+        setNewMatch({ match_number: "", team_1: "", team_2: "", venue: "", city: "", match_date: "", team_1_probability: "55", team_2_probability: "45", initial_count_team_1: "500", initial_count_team_2: "500" });
+        loadMatches(secret);
+      } else {
+        setAddError(data.error || "Failed to add match");
+      }
+    } catch {
+      setAddError("Network error");
+    } finally {
+      setAddSubmitting(false);
     }
   };
 
@@ -148,6 +222,148 @@ export default function AdminContent() {
           ⚠️ {error}
         </div>
       )}
+
+      {/* ── Add Match ─────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-white/[0.08]" style={{ background: "rgba(255,255,255,0.03)" }}>
+        <button
+          onClick={() => setShowAddForm((v) => !v)}
+          className="w-full flex items-center justify-between px-5 py-4 text-left"
+        >
+          <span className="font-bold text-white text-sm">➕ Add New Match</span>
+          <span className="text-gray-500 text-xs">{showAddForm ? "▲ Collapse" : "▼ Expand"}</span>
+        </button>
+
+        {showAddForm && (
+          <form onSubmit={handleAddMatch} className="px-5 pb-5 space-y-4 border-t border-white/[0.06] pt-4">
+            {/* Row 1: match number + date */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1.5">Match #</label>
+                <input
+                  type="number" min="1" max="74" required
+                  placeholder="e.g. 23"
+                  value={newMatch.match_number}
+                  onChange={(e) => setNewMatch((p) => ({ ...p, match_number: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white placeholder-gray-600 focus:outline-none focus:border-white/30 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1.5">Match Date & Time (IST)</label>
+                <input
+                  type="datetime-local" required
+                  value={newMatch.match_date}
+                  onChange={(e) => setNewMatch((p) => ({ ...p, match_date: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white focus:outline-none focus:border-white/30 text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Row 2: teams */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1.5">Team 1</label>
+                <select
+                  required
+                  value={newMatch.team_1}
+                  onChange={(e) => setNewMatch((p) => ({ ...p, team_1: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#0d1a2d] border border-white/[0.1] text-white focus:outline-none focus:border-white/30 text-sm"
+                >
+                  <option value="">Select team</option>
+                  {IPL_TEAMS.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1.5">Team 2</label>
+                <select
+                  required
+                  value={newMatch.team_2}
+                  onChange={(e) => setNewMatch((p) => ({ ...p, team_2: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#0d1a2d] border border-white/[0.1] text-white focus:outline-none focus:border-white/30 text-sm"
+                >
+                  <option value="">Select team</option>
+                  {IPL_TEAMS.filter((t) => t !== newMatch.team_1).map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Row 3: venue picker */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1.5">Venue</label>
+              <select
+                required
+                value={newMatch.venue}
+                onChange={(e) => {
+                  const selected = IPL_VENUES.find((v) => v.venue === e.target.value);
+                  setNewMatch((p) => ({ ...p, venue: e.target.value, city: selected?.city ?? p.city }));
+                }}
+                className="w-full px-3 py-2.5 rounded-xl bg-[#0d1a2d] border border-white/[0.1] text-white focus:outline-none focus:border-white/30 text-sm"
+              >
+                <option value="">Select venue</option>
+                {IPL_VENUES.map((v) => (
+                  <option key={v.venue} value={v.venue}>{v.venue}, {v.city}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Row 4: AI probabilities */}
+            <div>
+              <label className="block text-xs text-gray-500 mb-2">
+                AI Win Probability — must total 100
+                <span className="ml-2 font-bold text-white">
+                  {newMatch.team_1 || "T1"} {newMatch.team_1_probability}% · {newMatch.team_2 || "T2"} {newMatch.team_2_probability}%
+                </span>
+              </label>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-500 w-8 text-right">{newMatch.team_1_probability}%</span>
+                <input
+                  type="range" min="5" max="95"
+                  value={newMatch.team_1_probability}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setNewMatch((p) => ({ ...p, team_1_probability: String(v), team_2_probability: String(100 - v) }));
+                  }}
+                  className="flex-1 accent-red-500"
+                />
+                <span className="text-xs text-gray-500 w-8">{newMatch.team_2_probability}%</span>
+              </div>
+            </div>
+
+            {/* Row 5: seed counts */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1.5">Seed votes — {newMatch.team_1 || "Team 1"}</label>
+                <input
+                  type="number" min="0"
+                  value={newMatch.initial_count_team_1}
+                  onChange={(e) => setNewMatch((p) => ({ ...p, initial_count_team_1: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white focus:outline-none focus:border-white/30 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1.5">Seed votes — {newMatch.team_2 || "Team 2"}</label>
+                <input
+                  type="number" min="0"
+                  value={newMatch.initial_count_team_2}
+                  onChange={(e) => setNewMatch((p) => ({ ...p, initial_count_team_2: e.target.value }))}
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/[0.06] border border-white/[0.1] text-white focus:outline-none focus:border-white/30 text-sm"
+                />
+              </div>
+            </div>
+
+            {addError && <p className="text-red-400 text-sm">⚠️ {addError}</p>}
+            {addSuccess && <p className="text-green-400 text-sm">✅ {addSuccess}</p>}
+
+            <button
+              type="submit"
+              disabled={addSubmitting}
+              className="w-full py-3 rounded-xl font-bold text-sm text-white disabled:opacity-50 transition-all"
+              style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.4)" }}
+            >
+              {addSubmitting ? "Adding…" : "➕ Add Match"}
+            </button>
+          </form>
+        )}
+      </div>
 
       {/* Pending matches — need results entered */}
       {pending.length > 0 && (

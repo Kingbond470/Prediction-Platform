@@ -4,6 +4,28 @@ import { NextRequest, NextResponse } from "next/server";
 const IS_DEV = process.env.NODE_ENV !== "production";
 const DEV_OTP = "123456";
 
+/** Look up referrer by username and award 500 pts to both parties. Fire-and-forget. */
+async function applyReferralBonus(newUserId: string, referralCode: string) {
+  try {
+    const { data: referrer } = await supabase
+      .from("users")
+      .select("id")
+      .eq("username", referralCode.trim().toLowerCase())
+      .maybeSingle();
+    if (!referrer || referrer.id === newUserId) return;
+    await supabase
+      .from("users")
+      .update({ referred_by: referrer.id })
+      .eq("id", newUserId);
+    await supabase.rpc("award_referral_bonus", {
+      referrer_id: referrer.id,
+      referee_id: newUserId,
+    });
+  } catch {
+    // non-fatal — don't block signup
+  }
+}
+
 function setSessionCookie(res: NextResponse, userId: string): NextResponse {
   res.cookies.set("uid", userId, {
     httpOnly: true,
@@ -45,7 +67,7 @@ function devUserIdFromPhone(phone: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone, otp, name, username, city, favorite_team } = await request.json();
+    const { phone, otp, name, username, city, favorite_team, referral_code } = await request.json();
 
     // ── Dev bypass ──────────────────────────────────────────────────────────
     if (IS_DEV) {
@@ -80,6 +102,8 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
+
+        if (referral_code) await applyReferralBonus(userId, referral_code);
       }
 
       const finalUserId = existingUser?.id ?? userId;
@@ -136,6 +160,8 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+
+      if (referral_code) await applyReferralBonus(userId, referral_code);
     }
 
     return setSessionCookie(

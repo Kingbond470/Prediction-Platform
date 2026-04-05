@@ -88,12 +88,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { phone, name, username, city, favorite_team } = body as {
+    const { phone, name, username, city, favorite_team, referral_code } = body as {
       phone: string;
       name: string;
       username: string;
       city?: string | null;
       favorite_team?: string | null;
+      referral_code?: string | null;
     };
 
     // ── Validate inputs ───────────────────────────────────────────────────────
@@ -188,6 +189,21 @@ export async function POST(request: NextRequest) {
         );
       }
       return NextResponse.json({ error: insertError.message }, { status: 400 });
+    }
+
+    // Award referral bonus to both parties (fire-and-forget)
+    if (referral_code) {
+      try {
+        const { data: referrer } = await supabase
+          .from("users")
+          .select("id")
+          .eq("username", referral_code.trim().toLowerCase())
+          .maybeSingle();
+        if (referrer && referrer.id !== userId) {
+          await supabase.from("users").update({ referred_by: referrer.id }).eq("id", userId);
+          await supabase.rpc("award_referral_bonus", { referrer_id: referrer.id, referee_id: userId });
+        }
+      } catch { /* non-fatal */ }
     }
 
     return setSessionCookie(

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/app/components/Button";
 import { TEAM_CONFIG } from "@/app/lib/teams";
 import { setFavoriteTeam } from "@/app/components/ThemeProvider";
@@ -70,11 +70,20 @@ function Field({
 // ── Main form ─────────────────────────────────────────────────────────────────
 function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Redirect already-logged-in users to home
   useEffect(() => {
     if (localStorage.getItem("userId")) router.replace("/");
   }, [router]);
+
+  // Referral code from ?ref= param or localStorage
+  const [referralCode] = useState<string>(() => {
+    const fromUrl = searchParams.get("ref") || "";
+    if (fromUrl) return fromUrl;
+    if (typeof window !== "undefined") return localStorage.getItem("referralCode") || "";
+    return "";
+  });
 
   // Required fields
   const [firstName, setFirstName] = useState("");
@@ -125,6 +134,7 @@ function SignupForm() {
           username: username.trim(),
           city: city.trim() || null,
           favorite_team: favoriteTeam || null,
+          referral_code: referralCode || null,
         }),
       });
       const data = await res.json();
@@ -136,6 +146,7 @@ function SignupForm() {
         if (favoriteTeam) localStorage.setItem("favoriteTeam", favoriteTeam);
         if (city.trim()) localStorage.setItem("userCity", city.trim());
         localStorage.setItem("newSignup", "1");
+        localStorage.removeItem("referralCode");
         // Signal NavAuth (in the shared layout) to re-read username immediately
         window.dispatchEvent(new CustomEvent("authChanged"));
         const redirect = localStorage.getItem("authRedirect") || "/";
@@ -161,6 +172,17 @@ function SignupForm() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-10 px-4">
       <div className="w-full max-w-sm">
+
+        {/* Referral banner */}
+        {referralCode && (
+          <div className="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-sm">
+            <span className="text-xl">🎁</span>
+            <span>
+              <span className="font-semibold">@{referralCode}</span> invited you!
+              Sign up and you&apos;ll both get <span className="font-semibold">+500 bonus points</span>.
+            </span>
+          </div>
+        )}
 
         {/* Header */}
         <div className="text-center mb-8">

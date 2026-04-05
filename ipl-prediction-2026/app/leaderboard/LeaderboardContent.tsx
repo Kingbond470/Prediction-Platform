@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getTeamConfig } from "@/app/lib/teams";
+import { computeBadges, BadgeState } from "@/app/lib/badges";
+import BadgeRow from "@/app/components/BadgeRow";
+import InviteCard from "@/app/components/InviteCard";
 
 interface LeaderboardEntry {
   id: string;
@@ -33,6 +36,8 @@ export default function LeaderboardContent() {
   const favTeam  = typeof window !== "undefined" ? localStorage.getItem("favoriteTeam") : null;
   const teamCfg  = favTeam ? getTeamConfig(favTeam) : null;
   const [rankDelta, setRankDelta] = useState<number | null>(null);
+  const [badges, setBadges] = useState<BadgeState[]>([]);
+  const [toastBadge, setToastBadge] = useState<BadgeState | null>(null);
 
   const fetchLeaderboard = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -55,10 +60,27 @@ export default function LeaderboardContent() {
         const storageKey = `lastRank_${userId}`;
         const stored = localStorage.getItem(storageKey);
         if (stored) {
-          const delta = Number(stored) - newRank.rank; // positive = climbed
+          const delta = Number(stored) - newRank.rank;
           setRankDelta(delta !== 0 ? delta : null);
         }
         localStorage.setItem(storageKey, String(newRank.rank));
+
+        // Compute badges and fire toast for newly unlocked ones
+        const computed = computeBadges(newRank);
+        setBadges(computed);
+        const seenKey = `seenBadges_${userId}`;
+        const seen: string[] = JSON.parse(localStorage.getItem(seenKey) || "[]");
+        const newlyUnlocked = computed.filter(
+          (b) => b.unlocked && !seen.includes(b.id)
+        );
+        if (newlyUnlocked.length > 0) {
+          setToastBadge(newlyUnlocked[0]);
+          localStorage.setItem(
+            seenKey,
+            JSON.stringify([...seen, ...newlyUnlocked.map((b) => b.id)])
+          );
+          setTimeout(() => setToastBadge(null), 4000);
+        }
       }
     } catch {
       // keep stale data on error
@@ -108,6 +130,23 @@ export default function LeaderboardContent() {
 
   return (
     <div className="max-w-2xl mx-auto py-6 space-y-5 animate-slide-up">
+      {/* Badge unlock toast */}
+      {toastBadge && (
+        <div
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-lg animate-slide-up"
+          style={{
+            background: `${toastBadge.color}22`,
+            border: `1px solid ${toastBadge.color}55`,
+            color: toastBadge.color,
+          }}
+        >
+          <span className="text-xl">{toastBadge.emoji}</span>
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest">Badge Unlocked!</p>
+            <p className="text-sm font-bold">{toastBadge.label}</p>
+          </div>
+        </div>
+      )}
 
       {/* ── Back link (desktop — mobile uses bottom nav) ─────────── */}
       <a
@@ -177,8 +216,18 @@ export default function LeaderboardContent() {
               <p className="text-xs text-gray-500">points</p>
             </div>
           </div>
+          {badges.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-white/[0.06]">
+              <BadgeRow badges={badges} />
+            </div>
+          )}
         </div>
-      ) : userId ? (
+      ) : null}
+
+      {/* ── Invite card (logged-in users only) ───────────────────── */}
+      {username && <InviteCard username={username} />}
+
+      {!userRank && userId && (
         <div className="rounded-2xl glass p-4 text-center">
           <p className="text-gray-400 text-sm">Make your first prediction to appear on the leaderboard!</p>
           <button
@@ -189,7 +238,9 @@ export default function LeaderboardContent() {
             Browse Matches →
           </button>
         </div>
-      ) : (
+      )}
+
+      {!userId && (
         <div
           className="rounded-2xl p-5 text-center"
           style={{

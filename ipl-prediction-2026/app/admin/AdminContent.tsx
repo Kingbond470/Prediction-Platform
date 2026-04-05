@@ -133,12 +133,19 @@ export default function AdminContent() {
       return;
     }
     setAddSubmitting(true);
+    // BUG-02 fix: datetime-local gives local time with no offset — force IST (+05:30)
+    const matchDateIST = newMatch.match_date
+      ? newMatch.match_date.length === 16
+        ? `${newMatch.match_date}:00+05:30`
+        : newMatch.match_date
+      : "";
     try {
       const res = await fetch("/api/admin/matches", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-admin-secret": secret },
         body: JSON.stringify({
           ...newMatch,
+          match_date: matchDateIST,
           match_number: Number(newMatch.match_number),
           team_1_probability: p1,
           team_2_probability: p2,
@@ -199,8 +206,10 @@ export default function AdminContent() {
     );
   }
 
-  const pending = matches.filter((m) => m.status !== "completed");
-  const completed = matches.filter((m) => m.status === "completed");
+  const now = new Date();
+  const needsResult = matches.filter((m) => m.status !== "completed" && new Date(m.match_date) <= now);
+  const upcoming    = matches.filter((m) => m.status !== "completed" && new Date(m.match_date) > now);
+  const completed   = matches.filter((m) => m.status === "completed");
 
   return (
     <div className="max-w-3xl mx-auto py-6 space-y-6">
@@ -265,7 +274,7 @@ export default function AdminContent() {
                 <select
                   required
                   value={newMatch.team_1}
-                  onChange={(e) => setNewMatch((p) => ({ ...p, team_1: e.target.value }))}
+                  onChange={(e) => setNewMatch((p) => ({ ...p, team_1: e.target.value, team_2: "" }))}
                   className="w-full px-3 py-2.5 rounded-xl bg-[#0d1a2d] border border-white/[0.1] text-white focus:outline-none focus:border-white/30 text-sm"
                 >
                   <option value="">Select team</option>
@@ -365,20 +374,20 @@ export default function AdminContent() {
         )}
       </div>
 
-      {/* Pending matches — need results entered */}
-      {pending.length > 0 && (
+      {/* Matches that have started — need result entered */}
+      {needsResult.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500">
-            Pending Results ({pending.length})
+            Needs Result ({needsResult.length})
           </h2>
-          {pending.map((match) => {
+          {needsResult.map((match) => {
             const isScoring = scoring === match.id;
             const result = results[match.id];
             return (
               <div
                 key={match.id}
-                className="rounded-2xl p-4 border border-white/[0.08]"
-                style={{ background: "rgba(255,255,255,0.03)" }}
+                className="rounded-2xl p-4 border border-amber-500/20"
+                style={{ background: "rgba(245,158,11,0.04)" }}
               >
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div>
@@ -427,6 +436,32 @@ export default function AdminContent() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Upcoming fixtures — view only, no winner buttons */}
+      {upcoming.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500">
+            Upcoming Fixtures ({upcoming.length})
+          </h2>
+          {upcoming.map((match) => (
+            <div
+              key={match.id}
+              className="rounded-xl p-3.5 flex items-center justify-between border border-white/[0.07]"
+              style={{ background: "rgba(255,255,255,0.02)" }}
+            >
+              <div>
+                <p className="font-semibold text-white text-sm">
+                  Match #{match.match_number} · {match.team_1} vs {match.team_2}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {match.venue} · {new Date(match.match_date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                </p>
+              </div>
+              <span className="text-xs text-gray-600 font-semibold shrink-0">Scheduled</span>
+            </div>
+          ))}
         </div>
       )}
 

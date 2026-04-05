@@ -1,10 +1,14 @@
 "use client";
 
+import { useState } from "react";
+
 interface InviteCardProps {
   username: string;
 }
 
 export default function InviteCard({ username }: InviteCardProps) {
+  const [copied, setCopied] = useState(false);
+
   const inviteUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/signup?ref=${username}`
@@ -15,7 +19,10 @@ export default function InviteCard({ username }: InviteCardProps) {
   );
 
   function handleCopy() {
-    navigator.clipboard.writeText(inviteUrl).catch(() => {});
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
   }
 
   return (
@@ -42,10 +49,11 @@ export default function InviteCard({ username }: InviteCardProps) {
         <span className="flex-1 truncate">/signup?ref={username}</span>
         <button
           onClick={handleCopy}
-          className="shrink-0 text-gray-500 hover:text-white transition-colors px-1"
+          className="shrink-0 transition-colors px-1 text-xs font-semibold"
+          style={{ color: copied ? "#10B981" : "#6B7280" }}
           title="Copy link"
         >
-          📋
+          {copied ? "Copied!" : "📋"}
         </button>
       </div>
 

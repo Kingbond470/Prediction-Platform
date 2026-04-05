@@ -22,7 +22,9 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   const router = useRouter();
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem("userId") : null
+  );
   const [activeTab, setActiveTab] = useState<Tab>("upcoming");
   const [votedMatchIds, setVotedMatchIds] = useState<Set<string>>(new Set());
   const [votedTeams, setVotedTeams] = useState<Map<string, string>>(new Map());
@@ -62,6 +64,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
         const match = initialMatches.find((m) => m.id === pendingMatchId);
         if (match) {
           localStorage.removeItem("selectedMatchId");
+          localStorage.removeItem("selectedMatchTeams");
           setSelectedMatch(match);
           setIsModalOpen(true);
         }

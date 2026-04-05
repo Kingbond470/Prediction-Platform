@@ -153,6 +153,7 @@ function SignupForm() {
         if (city.trim()) localStorage.setItem("userCity", city.trim());
         localStorage.setItem("newSignup", "1");
         localStorage.removeItem("referralCode");
+        localStorage.removeItem("selectedMatchTeams");
         // Signal NavAuth (in the shared layout) to re-read username immediately
         window.dispatchEvent(new CustomEvent("authChanged"));
         const redirect = localStorage.getItem("authRedirect") || "/";

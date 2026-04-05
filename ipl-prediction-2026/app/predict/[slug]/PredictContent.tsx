@@ -59,6 +59,7 @@ export default function PredictContent({ match }: Props) {
       typeof window !== "undefined" ? localStorage.getItem("userId") : null;
     if (!userId) {
       localStorage.setItem("selectedMatchId", match.id);
+      localStorage.setItem("authRedirect", window.location.pathname);
       router.push("/signup");
       return;
     }

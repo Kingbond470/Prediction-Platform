@@ -189,7 +189,28 @@ export default function LeaderboardContent() {
             Browse Matches →
           </button>
         </div>
-      ) : null}
+      ) : (
+        <div
+          className="rounded-2xl p-5 text-center"
+          style={{
+            background: "linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.03))",
+            border: "1px solid rgba(239,68,68,0.2)",
+          }}
+        >
+          <div className="text-4xl mb-3">🏆</div>
+          <p className="text-white font-bold text-base mb-1">Join the Competition</p>
+          <p className="text-gray-400 text-sm mb-4">
+            Sign up free to make predictions, beat the AI, and climb the rankings.
+          </p>
+          <button
+            onClick={() => router.push("/signup")}
+            className="px-6 py-2.5 rounded-xl text-sm font-bold transition-smooth"
+            style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.35)", color: "#EF4444" }}
+          >
+            Create Free Account →
+          </button>
+        </div>
+      )}
 
       {/* ── Full rankings ────────────────────────────────────────── */}
       <div className="rounded-2xl glass p-5">

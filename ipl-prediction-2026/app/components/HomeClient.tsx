@@ -125,7 +125,13 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   };
 
   const handleVote = async (team: string) => {
-    if (!userId || !selectedMatch) return;
+    if (!selectedMatch) return;
+    if (!userId) {
+      // Session expired or stale modal — redirect to signup
+      localStorage.setItem("selectedMatchId", selectedMatch.id);
+      router.push("/signup");
+      return;
+    }
 
     const res = await fetch("/api/predictions", {
       method: "POST",

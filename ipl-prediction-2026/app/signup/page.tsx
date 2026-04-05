@@ -138,7 +138,9 @@ function SignupForm() {
         localStorage.setItem("newSignup", "1");
         // Signal NavAuth (in the shared layout) to re-read username immediately
         window.dispatchEvent(new CustomEvent("authChanged"));
-        router.push("/");
+        const redirect = localStorage.getItem("authRedirect") || "/";
+        localStorage.removeItem("authRedirect");
+        router.push(redirect);
       } else {
         setServerError(data.error || "Something went wrong. Please try again.");
       }

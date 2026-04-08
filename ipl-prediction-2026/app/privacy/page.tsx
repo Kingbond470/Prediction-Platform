@@ -1,6 +1,8 @@
 export const metadata = {
   title: "Privacy Policy | IPL Prediction 2026",
   description: "Privacy policy for IPL Prediction 2026 — how we collect and use your data.",
+  alternates: { canonical: "https://iplprediction2026.in/privacy" },
+  robots: { index: false, follow: false },
 };
 
 export default function PrivacyPage() {

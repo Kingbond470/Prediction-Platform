@@ -16,6 +16,8 @@ export const metadata: Metadata = {
     url: "https://iplprediction2026.in/results",
   },
   alternates: { canonical: "https://iplprediction2026.in/results" },
+  // noindex: query-string based (?match_id=...), user-specific content, not a useful crawl target
+  robots: { index: false, follow: true },
 };
 
 export default function ResultsPage() {

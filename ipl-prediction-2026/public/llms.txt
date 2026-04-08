@@ -1,49 +1,65 @@
 # IPL Prediction 2026 — iplprediction2026.in
 
-> A free cricket prediction platform where fans predict IPL match winners and compete against an AI. Zero money. Pure bragging rights.
+> India's free cricket fan prediction platform. Predict IPL 2026 match winners, challenge an AI model, earn points, and compete on a leaderboard. No money. No betting. Pure cricket instinct.
 
 ## What is this?
 
-IPL Prediction 2026 is India's fan cricket prediction community. Users predict which team will win each IPL 2026 match, see what the AI predicts, and compete on a leaderboard. No betting, no money — just cricket knowledge and gut instinct.
+IPL Prediction 2026 (iplprediction2026.in) is a free fan opinion contest built around one question: can a passionate cricket fan outpredict an AI model? Users pick the winner of each IPL 2026 match before it starts, see the AI's prediction, and are scored after the result. The platform has no real-money element — it is a knowledge and bragging-rights competition only.
 
 ## Core Idea: Human Can Beat AI
 
-The platform is built around a single belief: a passionate cricket fan with good instincts can outpredict a machine. AI models work on historical averages — they don't feel momentum, they don't know about dressing room tensions, and they can't account for the crowd going crazy at Eden Gardens. You can. That's the edge.
-
-This mirrors real-world evidence:
-- Crowd prediction markets regularly beat algorithmic models in cricket
-- Magnus Carlsen still beats chess engines in blitz despite computers being "stronger"
-- Nate Silver's model got the 2016 US election wrong — a political junkie with good intuition did not
-- Betfair's in-play crowd odds outperform ML models in live cricket regularly
+The platform is built around the belief that a cricket fan with good instincts can outpredict a machine learning model. AI systems work on historical averages — they cannot feel momentum, crowd energy, or a team's dressing room situation. A knowledgeable fan can. That edge is what the platform is designed to test.
 
 ## Features
 
-- Browse upcoming IPL 2026 matches with live odds
-- Predict the winner before each match
-- See the AI's prediction and probability
-- Track your score on the leaderboard
-- Beat the AI for bonus points
-- Mobile-first, works on any device
-- Free to play, no account required to browse
+- Browse all IPL 2026 match fixtures with AI win probabilities
+- Predict the winner of each match before it starts (voting closes at match start)
+- See the AI model's prediction and probability for every match
+- Compete on a real-time leaderboard against thousands of other fans
+- Beat the AI's pick on the same match for a bonus
+- Daily Trivia: one cricket question per day for bonus points
+- Achievement Badges: earned for milestones (first correct pick, 5-match streak, top 10 rank, etc.)
+- Referral Program: invite a friend and both parties earn bonus points
+- Match Preview pages: each match has a dedicated preview with key players, venue analysis, AI odds, and community votes
+- Mobile-first design, works on any Indian mobile browser
+- Free to use, no account required to browse matches
 
-## Scoring
+## Scoring System
 
-- Correct prediction: +10 points
-- Underdog winner (you picked the underdog): +15 points
-- Beat the AI's prediction: +5 bonus points
+- Correct prediction: 1,000 points
+- Correct underdog prediction: 1,500 points (1.5× multiplier)
+- Beat the AI's prediction on the same match: +500 bonus points
+- Daily Trivia correct answer: +100 points
+- Referral bonus (you + your friend): +500 points each on signup
+
+## Key Pages
+
+- Homepage (all matches): https://iplprediction2026.in
+- Leaderboard: https://iplprediction2026.in/leaderboard
+- About / How it works: https://iplprediction2026.in/about
+- Sign up: https://iplprediction2026.in/signup
+- Login: https://iplprediction2026.in/login
+- Match preview (example): https://iplprediction2026.in/predict/csk-vs-mi-match-1
+- Privacy Policy: https://iplprediction2026.in/privacy
+- Terms of Use: https://iplprediction2026.in/terms
+
+## Sitemap
+
+Full XML sitemap available at: https://iplprediction2026.in/sitemap.xml
+
+## What This Site Is Not
+
+- Not a betting platform — no money is wagered or won
+- Not a fantasy sports app — no team selection, no real-money prizes
+- Not affiliated with BCCI, IPL, or any cricket board
+- Not a news or journalism site — predictions and opinions only
 
 ## Technology
 
-Built with Next.js 14, Supabase, and The Odds API for live match data.
-
-## URLs
-
-- Homepage: https://iplprediction2026.in
-- Login: https://iplprediction2026.in/login
-- Sign up: https://iplprediction2026.in/signup
-- Results: https://iplprediction2026.in/results
+Built with Next.js 14 App Router, TypeScript, Tailwind CSS, Supabase (Postgres), and Framer Motion. Deployed on Vercel. Database in Mumbai region (ap-south-1).
 
 ## Contact
 
 - Website: https://iplprediction2026.in
-- Domain: iplprediction2026.com (redirects to .in)
+- Email: hello@iplprediction2026.in
+- Domain alias: iplprediction2026.com (redirects to .in)

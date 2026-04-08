@@ -1,6 +1,8 @@
 export const metadata = {
   title: "Terms of Use | IPL Prediction 2026",
   description: "Terms of use for IPL Prediction 2026.",
+  alternates: { canonical: "https://iplprediction2026.in/terms" },
+  robots: { index: false, follow: false },
 };
 
 export default function TermsPage() {

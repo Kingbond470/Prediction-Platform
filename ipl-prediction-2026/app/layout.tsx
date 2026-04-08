@@ -133,6 +133,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {[
                   { href: "/", label: "Home" },
                   { href: "/leaderboard", label: "Leaderboard" },
+                  { href: "/about", label: "About" },
                 ].map((link) => (
                   <a
                     key={link.href}
@@ -182,6 +183,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <p className="mt-1">© 2026 IPL Prediction. All rights reserved.</p>
                 </div>
                 <div className="flex gap-4 text-xs text-gray-600">
+                  <a href="/about" className="hover:text-gray-400 transition-colors">About</a>
                   <a href="/privacy" className="hover:text-gray-400 transition-colors">Privacy</a>
                   <a href="/terms" className="hover:text-gray-400 transition-colors">Terms</a>
                   <a href="mailto:hello@iplprediction2026.in" className="hover:text-gray-400 transition-colors">Contact</a>

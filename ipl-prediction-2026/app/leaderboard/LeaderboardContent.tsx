@@ -281,9 +281,9 @@ export default function LeaderboardContent() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {updatedLabel && (
-              <span className="text-xs text-gray-600">Updated {updatedLabel}</span>
+              <span className="hidden sm:inline text-xs text-gray-600">Updated {updatedLabel}</span>
             )}
             <button
               onClick={() => fetchLeaderboard(true)}

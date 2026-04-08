@@ -310,7 +310,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-1 py-2 px-2 sm:px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 ${
               activeTab === tab.key
                 ? "bg-red-500/20 text-red-400 border border-red-500/30"
                 : "text-gray-500 hover:text-gray-300"
@@ -322,7 +322,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
             <span>{tab.label}</span>
             {tab.count > 0 && (
               <span
-                className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                className={`hidden sm:inline text-xs px-1.5 py-0.5 rounded-full font-bold ${
                   activeTab === tab.key
                     ? "bg-red-500/30 text-red-300"
                     : "bg-white/[0.06] text-gray-600"

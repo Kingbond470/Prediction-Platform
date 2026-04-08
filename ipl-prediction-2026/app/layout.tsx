@@ -125,7 +125,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 >
                   🏏
                 </div>
-                <span className="font-display font-bold text-white text-sm tracking-wide">IPL PREDICTION <span className="text-gray-500 font-normal">2026</span></span>
+                <span className="hidden min-[380px]:inline font-display font-bold text-white text-sm tracking-wide">IPL PREDICTION <span className="text-gray-500 font-normal">2026</span></span>
               </a>
 
               {/* Center: desktop page links */}

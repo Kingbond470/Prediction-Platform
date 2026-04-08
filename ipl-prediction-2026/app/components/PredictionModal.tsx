@@ -87,7 +87,7 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
 
       {/* Modal — uses .modal-container CSS class for responsive positioning */}
       <div
-        className={`modal-container no-scrollbar ${visible ? "modal-visible" : "modal-hidden"}`}
+        className={`modal-container ${visible ? "modal-visible" : "modal-hidden"}`}
         style={{
           background: "#0D1A2D",
           borderTop: "1px solid rgba(255,255,255,0.1)",
@@ -134,8 +134,8 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-5 pt-4 pb-6">
+        {/* Body — scrollable, stops before sticky footer */}
+        <div className="modal-scroll no-scrollbar px-5 pt-4 pb-3">
           <p className="text-sm text-gray-400 text-center mb-3">
             Who wins? 🤔 Pick a side — then{" "}
             <span className="text-white font-semibold">outsmart the AI</span>
@@ -288,17 +288,13 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
             </div>
           </div>
 
-          {/* Inline error */}
-          {error && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm mb-4">
-              <span>⚠️</span>
-              <span>{error}</span>
-            </div>
-          )}
+        </div>
 
+        {/* Sticky footer — always visible, never scrolled out of view */}
+        <div className="modal-footer px-5 pb-5 pt-3 border-t border-white/[0.07]" style={{ background: "#0D1A2D" }}>
           {/* Match info pill */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-5 text-xs text-gray-500">
-            <span className="truncate">📍 {match.venue}, {match.city}</span>
+          <div className="flex items-center justify-between gap-1 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] mb-3 text-xs text-gray-500">
+            <span className="truncate">📍 {match.city}</span>
             <span className="shrink-0">
               {new Date(match.match_date).toLocaleString("en-IN", {
                 day: "numeric",
@@ -308,6 +304,14 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
               })}
             </span>
           </div>
+
+          {/* Inline error */}
+          {error && (
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-sm mb-3">
+              <span>⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3">

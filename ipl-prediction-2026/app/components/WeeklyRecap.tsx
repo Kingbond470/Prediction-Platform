@@ -80,7 +80,7 @@ export default function WeeklyRecap({
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-2 mb-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
         {statBlocks.map(({ label, value, color, emoji }) => (
           <div
             key={label}

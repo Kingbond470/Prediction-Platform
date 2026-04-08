@@ -84,8 +84,8 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
 
       <div className="relative p-5">
         {/* Header row */}
-        <div className="flex justify-between items-center mb-5">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex justify-between items-start mb-5">
+          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0 pr-2">
             <span className="text-xs font-bold text-gray-500 tracking-widest uppercase">
               Match #{match.match_number}
             </span>
@@ -120,13 +120,15 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
             )}
           </div>
 
-          {votingOpen ? (
-            <CountdownTimer targetDate={match.match_date} />
-          ) : (
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-500/15 border border-gray-500/20 text-gray-500">
-              ⏸ Voting Closed
-            </span>
-          )}
+          <div className="shrink-0">
+            {votingOpen ? (
+              <CountdownTimer targetDate={match.match_date} />
+            ) : (
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-500/15 border border-gray-500/20 text-gray-500">
+                ⏸ Voting Closed
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Teams */}

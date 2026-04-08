@@ -128,7 +128,7 @@ export function ResultMatchCard({ match, userId, userPredictedTeam }: ResultMatc
             <p className="text-sm font-bold text-white">{humanWinner}</p>
           </div>
           <div className="text-center">
-            <p className={`text-lg font-black ${humanWon ? "text-green-400" : "text-red-400"}`}>
+            <p className={`text-sm sm:text-lg font-black ${humanWon ? "text-green-400" : "text-red-400"}`}>
               {humanWon ? "🧠 Humans Win!" : "🤖 AI Wins"}
             </p>
           </div>

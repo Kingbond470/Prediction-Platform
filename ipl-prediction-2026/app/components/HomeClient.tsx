@@ -104,10 +104,7 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
         });
     }
 
-    // Auto-select tab based on what has content
-    if (liveMatches.length > 0) setActiveTab("live");
-    else if (upcomingMatches.length > 0) setActiveTab("upcoming");
-    else if (resultMatches.length > 0) setActiveTab("results");
+    // Default always shows upcoming; no auto-jump so the primary action surface is consistent
   }, [initialMatches]);
 
   const handlePredict = (match: Match) => {
@@ -172,9 +169,9 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
     }
   };
 
-  const tabs: { key: Tab; label: string; icon: string; count: number }[] = [
-    { key: "live",     label: "Live",     icon: "🔴", count: liveMatches.length },
+  const tabs: { key: Tab; label: string; icon: string; count: number; pulse?: boolean }[] = [
     { key: "upcoming", label: "Upcoming", icon: "🏏", count: upcomingMatches.length },
+    { key: "live",     label: "Live",     icon: "🔴", count: liveMatches.length, pulse: liveMatches.length > 0 },
     { key: "results",  label: "Results",  icon: "📊", count: resultMatches.length },
   ];
 
@@ -319,7 +316,9 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
                 : "text-gray-500 hover:text-gray-300"
             }`}
           >
-            <span>{tab.icon}</span>
+            {tab.pulse && activeTab !== tab.key
+              ? <span className="live-dot" />
+              : <span>{tab.icon}</span>}
             <span>{tab.label}</span>
             {tab.count > 0 && (
               <span

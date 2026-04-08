@@ -16,6 +16,7 @@ interface Props {
 
 export default function PredictContent({ match }: Props) {
   const router = useRouter();
+  const [linkCopied, setLinkCopied] = useState(false);
   const team1 = getTeamConfig(match.team_1);
   const team2 = getTeamConfig(match.team_2);
   const votingOpen =
@@ -336,13 +337,20 @@ export default function PredictContent({ match }: Props) {
             </a>
             <button
               onClick={() => {
-                navigator.clipboard?.writeText(matchUrl);
+                navigator.clipboard?.writeText(matchUrl).then(() => {
+                  setLinkCopied(true);
+                  setTimeout(() => setLinkCopied(false), 2000);
+                });
               }}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 hover:bg-white/[0.08]"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#9CA3AF" }}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 hover:bg-white/[0.08]"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: `1px solid ${linkCopied ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.1)"}`,
+                color: linkCopied ? "#10B981" : "#9CA3AF",
+              }}
               title="Copy link"
             >
-              🔗
+              {linkCopied ? "Copied!" : "🔗"}
             </button>
           </div>
         </div>

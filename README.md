@@ -88,6 +88,31 @@ Guest visits iplprediction2026.in
 - **Referral program** — shareable invite link; both parties earn 500 pts on signup
 - **Match preview pages** — dedicated SEO page per match with venue analysis, key players, AI odds, community votes, full FAQ
 
+### Mobile-First Design
+
+The platform is designed and tested for Indian mobile users first. Every screen is audited at 320px (iPhone SE), 375px (iPhone 14), 768px (iPad), and 1280px (laptop).
+
+| Component | Mobile behaviour | Desktop behaviour |
+|---|---|---|
+| **Prediction Modal** | Slides up as bottom sheet from bottom of screen | Centred dialog (440px wide) |
+| **Submit button** | Sticky footer — always visible, never scrolled out of view | Same sticky footer |
+| **Bottom Nav** | Fixed, 3 tabs: Home / My Picks / Leaderboard | Hidden — desktop uses top nav links |
+| **Tab bar (Home)** | `text-xs`, count badges hidden to avoid overflow at 320px | `text-sm`, badges visible |
+| **Stats grids** | 2 columns (WeeklyRecap, About points) | 4 columns |
+| **NavBar logo** | Icon only below 380px — text hides to prevent overflow | Full "IPL PREDICTION 2026" |
+| **iOS safe area** | `calc(1.25rem + env(safe-area-inset-bottom))` on modal footer | n/a |
+
+Breakpoints: Tailwind default — `sm: 640px`, `md: 768px`, `lg: 1024px`. Custom: `min-[380px]:` for the nav logo edge case.
+
+### SEO
+
+- **Sitemap** (`/sitemap.xml`) — dynamic, pulls match slugs from Supabase; upcoming matches get `priority: 0.95 / hourly`, live `1.0 / always`, completed `0.6 / weekly`
+- **Match preview pages** (`/predict/[slug]`) — SSG with `generateStaticParams`; server-rendered venue analysis, key players, full FAQ for reliable Google indexing
+- **JSON-LD schemas** — WebSite, SportsOrganization (root layout), SportsEvent (match pages), FAQPage + HowTo + BreadcrumbList (about + match pages)
+- **llms.txt** — AI crawler identity file at `/public/llms.txt` describing the platform for LLM indexers
+- **Canonical + robots** — noindex on `/results` (user-specific), `/privacy`, `/terms`; canonical on all other pages
+- **OG + Twitter cards** — full metadata on leaderboard, about, match preview, and home pages
+
 ### Guest Experience
 - Browse all matches without an account
 - Guest hero banner explains the platform value prop
@@ -315,6 +340,62 @@ The AI prediction is computed from two signals:
 - **40% weight — Fan vote distribution** (seeded initial counts + real votes via `computeHybridProb()`)
 
 The hybrid probability determines the AI's pick. Users who pick the opposite team and are correct earn the +500 "Beat the AI" bonus on top of their correct-prediction points.
+
+---
+
+## Changelog
+
+### 2026-04-09 — Responsive Design Audit (`e585133`)
+- **PredictionModal**: sticky action footer — submit button never scrolls out of view on any device
+- **Tab bar**: `text-xs sm:text-sm` labels + count badges hidden on mobile — fixes 320px overflow
+- **WeeklyRecap**: stats grid `grid-cols-2 sm:grid-cols-4` — was 4 columns, cramped at 320px
+- **MatchCard**: header `items-start` + `shrink-0` countdown — badges no longer misalign timer when wrapping
+- **ResultMatchCard**: "Humans Win!" scales `text-sm sm:text-lg` — prevents overflow in 3-column row
+- **NavBar**: logo text `hidden min-[380px]:inline` — icon only below 380px, nav never overflows
+- **Leaderboard**: "Updated X ago" `hidden sm:inline` — header row stays clean on mobile
+- **README**: full rewrite — user flow, feature list, tech stack, DB schema, setup guide, changelog
+
+### 2026-04-08 — SEO & Meta Tags (`213959d`)
+- Sitemap updated with all pages, per-status priorities, and dynamic match slugs
+- llms.txt rewritten with correct scoring, all features, and key page URLs
+- noindex added to `/results`, `/privacy`, `/terms`
+- Full OG + Twitter card meta added to leaderboard page
+- Match preview pages enriched: venue analysis, key players (server-rendered), 6-question FAQ, BreadcrumbList schema, internal links
+
+### 2026-04-07 — About Page + Match Preview SEO (`1350da8`, `ee361c8`)
+- `/about` page with HowTo, FAQPage (8 Qs), BreadcrumbList JSON-LD schemas
+- Added to desktop nav and footer
+- `/predict/[slug]` server-rendered sections: venue analysis (pitch type, capacity, avg score), key players, expanded FAQ, internal links to leaderboard and about
+
+### 2026-04-06 — Tab Order + UX Polish (`639a84a`)
+- Tab order changed to Upcoming → Live → Results (matches the user's primary intent)
+- Removed auto-jump to Live tab — Upcoming is always the landing tab
+- Live tab shows a pulsing dot when matches are live (not on the active tab)
+
+### 2026-04-05 — QA Bug Fixes (`3a9b84d`)
+- BUG-02: Admin datetime-local value now appends `:00+05:30` (IST) before sending to API
+- BUG-03: Changing Team 1 in Add Match form clears Team 2 to prevent invalid state
+- BUG-04: Guest banner no longer flashes for logged-in users (lazy `useState` initializer)
+- BUG-05: `selectedMatchTeams` cleared when modal reopens and on signup success
+- BUG-07: Copy invite link now shows "Copied!" feedback for 2 seconds
+- BUG-08: Admin splits pending matches into "Needs Result" (started) vs "Upcoming" (future)
+
+### 2026-04-04 — Admin Add Match Form (`0313900`)
+- Full Add Match form in `/admin`: team picker (10 IPL teams), venue picker (12 IPL venues), IST datetime, probability slider with validation
+- `POST /api/admin/matches` with server-side validation: team uniqueness, probability sum = 100, no duplicate match numbers
+- Admin splits matches into "Needs Result" and "Upcoming Fixtures" sections
+
+### 2026-04-03 — Guest Flow Optimisation (`9d2227d`)
+- Guest hero banner on Home explaining the value prop with 3 bullet points and signup CTA
+- Match context preserved: guest predict → signup → returns to vote (via `selectedMatchId` + `selectedMatchTeams`)
+- DailyTrivia gated for guests — question shown, answer buttons disabled, amber signup CTA shown
+- Leaderboard ghost row for guests ("this could be you → Join Free")
+
+### 2026-03-30 — Referral Program
+- `?ref=` URL param reading on signup page
+- InviteCard component in leaderboard page — shareable link + WhatsApp share
+- Referral bonus: +500 pts for both referrer and referred user on signup
+- `referrals` table (migration 012) + API logic in `/api/auth/register`
 
 ---
 

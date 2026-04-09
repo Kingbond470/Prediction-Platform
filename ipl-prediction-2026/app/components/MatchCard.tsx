@@ -133,9 +133,13 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
 
         {/* Teams */}
         <div className="flex items-center justify-between mb-5">
-          {/* Team 1 */}
-          <div className="flex flex-col items-center gap-2 w-[38%]">
-            <TeamBadge team={match.team_1} size="lg" showName />
+          {/* Team 1 — tappable link to team page */}
+          <a
+            href={`/teams/${match.team_1.toLowerCase()}`}
+            className="flex flex-col items-center gap-2 w-[38%] group/team"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TeamBadge team={match.team_1} size="lg" showName className="group-hover/team:scale-105 transition-transform duration-200" />
             <div
               className="text-xs font-semibold px-3 py-1 rounded-full"
               style={{
@@ -146,7 +150,7 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
             >
               AI: {match.team_1_probability}%
             </div>
-          </div>
+          </a>
 
           {/* VS divider */}
           <div className="flex flex-col items-center gap-1">
@@ -156,9 +160,13 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
             <span className="text-xs text-gray-600 font-medium">⚔️</span>
           </div>
 
-          {/* Team 2 */}
-          <div className="flex flex-col items-center gap-2 w-[38%]">
-            <TeamBadge team={match.team_2} size="lg" showName />
+          {/* Team 2 — tappable link to team page */}
+          <a
+            href={`/teams/${match.team_2.toLowerCase()}`}
+            className="flex flex-col items-center gap-2 w-[38%] group/team"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TeamBadge team={match.team_2} size="lg" showName className="group-hover/team:scale-105 transition-transform duration-200" />
             <div
               className="text-xs font-semibold px-3 py-1 rounded-full"
               style={{
@@ -169,7 +177,7 @@ export function MatchCard({ match, onPredict, alreadyVoted = false }: MatchCardP
             >
               AI: {match.team_2_probability}%
             </div>
-          </div>
+          </a>
         </div>
 
         {/* Community vote bar */}

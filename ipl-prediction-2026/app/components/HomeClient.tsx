@@ -9,7 +9,7 @@ import { PredictionModal } from "./PredictionModal";
 import DailyTrivia from "./DailyTrivia";
 import RivalCard from "./RivalCard";
 import WeeklyRecap from "./WeeklyRecap";
-import { getTeamConfig } from "@/app/lib/teams";
+import { getTeamConfig, TEAM_CONFIG } from "@/app/lib/teams";
 import posthog from "posthog-js";
 
 interface HomeClientProps {
@@ -303,6 +303,28 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
           </div>
         </button>
       )}
+
+      {/* Browse by Team strip */}
+      <div className="mb-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-600 mb-2">Browse by Team</p>
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {Object.entries(TEAM_CONFIG).map(([key, cfg]) => (
+            <a
+              key={key}
+              href={`/teams/${key.toLowerCase()}`}
+              className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all hover:-translate-y-0.5"
+              style={{
+                background: favTeam === key ? `${cfg.color}22` : "rgba(255,255,255,0.05)",
+                border: `1px solid ${favTeam === key ? cfg.color + "50" : "rgba(255,255,255,0.08)"}`,
+                color: favTeam === key ? cfg.color : "#6B7280",
+              }}
+            >
+              <span>{cfg.emoji}</span>
+              <span>{key}</span>
+            </a>
+          ))}
+        </div>
+      </div>
 
       {/* Tab bar */}
       <div className="flex gap-2 mb-5 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">

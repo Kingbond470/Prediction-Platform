@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next";
 import { supabase, Match } from "@/lib/supabase";
 import { matchToSlug } from "@/lib/matchSlug";
+import { TEAM_CONFIG } from "@/app/lib/teams";
 
 async function getMatches(): Promise<Match[]> {
   try {
@@ -43,5 +44,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       m.status === "live"     ? 1.0 : 0.6,
   }));
 
-  return [...staticPages, ...matchPages];
+  const teamPages: MetadataRoute.Sitemap = Object.keys(TEAM_CONFIG).map((team) => ({
+    url: `${base}/teams/${team.toLowerCase()}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+  }));
+
+  return [...staticPages, ...teamPages, ...matchPages];
 }

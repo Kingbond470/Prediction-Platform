@@ -9,6 +9,7 @@ import { getTeamConfig } from "@/app/lib/teams";
 import WeeklyWinnersBanner from "@/app/components/WeeklyWinnersBanner";
 import WeeklyPoolBanner from "@/app/components/WeeklyPoolBanner";
 import PastWinners from "@/app/components/PastWinners";
+import { matchToSlug } from "@/lib/matchSlug";
 
 interface LeaderboardEntry {
   id: string;
@@ -237,13 +238,27 @@ export default function ResultsContent() {
   const humanWins  = !isPending && !samePick && isCorrect;
   const aiWins     = !isPending && !samePick && isWrong;
 
+  const matchSlug = match ? matchToSlug(match) : "";
+  const matchUrl  = matchSlug
+    ? `https://iplprediction2026.in/predict/${matchSlug}`
+    : "https://iplprediction2026.in";
+
+  const pointsEarned = prediction.points_earned ?? (humanWins ? 1000 : 0);
+  const resultOgUrl = match
+    ? `https://iplprediction2026.in/api/og?type=result` +
+      `&team1=${match.team_1}&team2=${match.team_2}&match=${match.match_number}` +
+      `&pick=${prediction.predicted_team}` +
+      `&won=${humanWins}&draw=${isDraw}` +
+      `&points=${pointsEarned}`
+    : null;
+
   const shareText = humanWins
     ? `I outsmarted the AI! I backed ${prediction.predicted_team} and they won! 🤖🏏 Can you beat the AI? #IPLPrediction2026`
     : isDraw
     ? `I matched the AI's pick — we both called ${prediction.predicted_team}! 🤝🏏 Can you beat the AI? #IPLPrediction2026`
     : `I predicted ${prediction.predicted_team} in the IPL match — try to beat the AI! 🏏 #IPLPrediction2026`;
-  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + " https://iplprediction2026.in")}`;
-  const twitterUrl  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText + " " + matchUrl)}`;
+  const twitterUrl  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText + " " + matchUrl)}`;
 
   const t1Pct = counts ? (counts.team_1 / counts.total) * 100 : 0;
   const t2Pct = counts ? (counts.team_2 / counts.total) * 100 : 0;
@@ -560,20 +575,47 @@ export default function ResultsContent() {
             </p>
           </div>
 
-          {/* Share preview card */}
-          <div
-            className="p-4 rounded-xl text-center"
-            style={{
-              background: `linear-gradient(135deg, ${myTeamCfg.color}15, rgba(255,255,255,0.03))`,
-              border: `1px solid ${myTeamCfg.color}25`,
-            }}
-          >
-            <p className="text-xs text-gray-500 mb-1">My IPL 2026 Prediction</p>
-            <p className="font-display font-black text-2xl" style={{ color: myTeamCfg.color }}>
-              {prediction.predicted_team} 🏆
-            </p>
-            <p className="text-xs text-gray-500 mt-1">{match.team_1} vs {match.team_2}</p>
-          </div>
+          {/* Share preview card — OG image if result is known, else static pill */}
+          {resultOgUrl && !isPending ? (
+            <div className="rounded-xl overflow-hidden border border-white/[0.07]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={resultOgUrl}
+                alt={`${prediction.predicted_team} result card`}
+                className="w-full"
+                style={{ aspectRatio: "1200/630", objectFit: "cover" }}
+              />
+            </div>
+          ) : (
+            <div
+              className="p-4 rounded-xl text-center"
+              style={{
+                background: `linear-gradient(135deg, ${myTeamCfg.color}15, rgba(255,255,255,0.03))`,
+                border: `1px solid ${myTeamCfg.color}25`,
+              }}
+            >
+              <p className="text-xs text-gray-500 mb-1">My IPL 2026 Prediction</p>
+              <p className="font-display font-black text-2xl" style={{ color: myTeamCfg.color }}>
+                {prediction.predicted_team} 🏆
+              </p>
+              <p className="text-xs text-gray-500 mt-1">{match.team_1} vs {match.team_2}</p>
+            </div>
+          )}
+
+          {/* Referral nudge — only shown after a correct prediction */}
+          {humanWins && username && (
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-green-500/[0.07] border border-green-500/20">
+              <span className="text-xl shrink-0">🎉</span>
+              <div className="min-w-0">
+                <p className="text-green-400 font-semibold text-sm">You beat the AI — brag about it!</p>
+                <p className="text-gray-500 text-xs mt-0.5">
+                  Share your code{" "}
+                  <span className="text-white font-bold">{username}</span>
+                  {" "}and earn +500 pts for every friend who joins.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">

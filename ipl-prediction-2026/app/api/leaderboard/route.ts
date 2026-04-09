@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       success: true,
       top_10: rankings,       // keeping key name for backward compat
       user_rank: userRank,
@@ -176,6 +176,8 @@ export async function GET(request: NextRequest) {
       weekly_stats: weeklyStats,
       total_players: totalPlayers,
     });
+    res.headers.set("Cache-Control", "s-maxage=30, stale-while-revalidate=60");
+    return res;
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

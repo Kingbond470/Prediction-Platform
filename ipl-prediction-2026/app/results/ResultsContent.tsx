@@ -431,6 +431,7 @@ export default function ResultsContent() {
             <p className="text-gray-400 text-sm">
               ⏳ Match result pending — <span className="text-white font-semibold">check back after the game!</span>
             </p>
+            <p className="text-gray-600 text-xs mt-1">Results are posted within 2 hours of match end.</p>
           </div>
         ) : (
           <div

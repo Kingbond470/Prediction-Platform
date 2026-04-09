@@ -167,7 +167,9 @@ export async function GET() {
       })
     );
 
-    return NextResponse.json({ success: true, matches: refreshed, source: "supabase" });
+    const res = NextResponse.json({ success: true, matches: refreshed, source: "supabase" });
+    res.headers.set("Cache-Control", "s-maxage=60, stale-while-revalidate=30");
+    return res;
   } catch (err) {
     console.error("GET /api/matches error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

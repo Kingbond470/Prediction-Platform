@@ -196,6 +196,11 @@ export default function LeaderboardContent() {
                     {rankDelta > 0 ? `↑ ${rankDelta}` : `↓ ${Math.abs(rankDelta)}`}
                   </span>
                 )}
+                {totalPlayers > 0 && userRank.rank <= totalPlayers && (
+                  <span className="text-[10px] text-amber-400 font-semibold mt-0.5">
+                    Top {Math.ceil((userRank.rank / totalPlayers) * 100)}% 🏆
+                  </span>
+                )}
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-white truncate">{userRank.username}</p>

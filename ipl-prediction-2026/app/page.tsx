@@ -5,7 +5,7 @@ import { supabase, Match } from "@/lib/supabase";
 
 export const metadata: Metadata = {
   title: "Today's IPL Match Prediction 2026 — Free Cricket Prediction | Beat the AI",
-  description: "Who will win today's IPL match? Make your free cricket prediction for IPL 2026, compete against AI, and climb the leaderboard. No money — pure cricket instincts. Join 2.1L+ fans.",
+  description: "Who will win today's IPL match? Make your free cricket prediction for IPL 2026, compete against AI, and climb the leaderboard. No money — pure cricket instincts.",
   keywords: [
     // P0 target keywords
     "today match prediction", "IPL prediction today", "who will win today IPL match",
@@ -81,9 +81,9 @@ function formatIndianCount(n: number): string {
 }
 
 async function getSiteStats(): Promise<SiteStats> {
-  // Fallback for mock/dev mode
+  // Fallback for mock/dev mode — show placeholder, not fake big numbers
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    return { totalPredictions: "2.1L+", beatAiPct: "74%", totalMatches: 74, totalFans: "2,10,000+" };
+    return { totalPredictions: "500+", beatAiPct: null, totalMatches: 74, totalFans: "500+" };
   }
 
   try {
@@ -122,7 +122,7 @@ async function getSiteStats(): Promise<SiteStats> {
       totalFans: totalFans > 0 ? formatIndianCount(totalFans) : formatIndianCount(totalPredictions),
     };
   } catch {
-    return { totalPredictions: "2.1L+", beatAiPct: "74%", totalMatches: 74, totalFans: "2,10,000+" };
+    return { totalPredictions: "—", beatAiPct: null, totalMatches: 0, totalFans: "—" };
   }
 }
 
@@ -229,11 +229,15 @@ export default async function HomePage() {
         {/* Stats row — real numbers from DB */}
         <div className="flex justify-center gap-2 sm:gap-6 flex-wrap">
           {[
-            { value: stats.totalPredictions, label: "Predictions", icon: "🎯", color: "from-red-500/20 to-red-500/5" },
+            ...(stats.totalPredictions !== "—"
+              ? [{ value: stats.totalPredictions, label: "Predictions", icon: "🎯", color: "from-red-500/20 to-red-500/5" }]
+              : []),
             ...(stats.beatAiPct
               ? [{ value: stats.beatAiPct, label: "Beat AI", icon: "🤖", color: "from-green-500/20 to-green-500/5" }]
               : []),
-            { value: String(stats.totalMatches), label: "Matches", icon: "🏏", color: "from-amber-500/20 to-amber-500/5" },
+            ...(stats.totalMatches > 0
+              ? [{ value: String(stats.totalMatches), label: "Matches", icon: "🏏", color: "from-amber-500/20 to-amber-500/5" }]
+              : []),
           ].map((stat) => (
             <div
               key={stat.label}
@@ -349,11 +353,16 @@ export default async function HomePage() {
           <div className="relative">
             <div className="text-5xl mb-3 animate-float inline-block">🏆</div>
             <h2 className="font-display font-black text-3xl text-white mb-2">
-              {stats.totalFans} fans playing
+              India&apos;s Human vs AI Cricket Battle
             </h2>
-            <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Join India&apos;s fastest growing cricket prediction community. Free to play, no betting, just vibes.
+            <p className="text-gray-400 mb-2 max-w-md mx-auto">
+              Free to play · No betting · Pure cricket instincts
             </p>
+            {stats.totalFans !== "—" && (
+              <p className="text-gray-600 text-sm mb-4">
+                {stats.totalFans} predictions made this season
+              </p>
+            )}
             <a href="#matches" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-bold text-sm shadow-glow-red hover:shadow-[0_4px_30px_rgba(239,68,68,0.5)] transition-smooth">
               🏏 Start Predicting — It&apos;s Free
             </a>

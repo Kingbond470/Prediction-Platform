@@ -169,6 +169,14 @@ export function PredictionModal({ isOpen, match, onClose, onVote }: PredictionMo
                     transform: isSelected ? "scale(1.02)" : "scale(1)",
                   }}
                 >
+                  {/* Pulse ring — shown when no team selected yet */}
+                  {!selectedTeam && (
+                    <span
+                      className="pointer-events-none absolute inset-0 rounded-xl animate-pulse"
+                      style={{ boxShadow: `0 0 0 2px ${cfg.color}55` }}
+                    />
+                  )}
+
                   {/* Checkmark */}
                   {isSelected && (
                     <div

@@ -10,6 +10,8 @@ import { getTeamConfig } from "@/app/lib/teams";
 import { getTeamPlayers } from "@/app/lib/players";
 import { matchToSlug } from "@/lib/matchSlug";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import dynamic from "next/dynamic";
+const LiveScoreBanner = dynamic(() => import("@/app/components/LiveScoreBanner"), { ssr: false });
 
 interface Props {
   match: Match;
@@ -140,6 +142,11 @@ export default function PredictContent({ match }: Props) {
           {match.team_1} vs {match.team_2} Prediction
         </span>
       </nav>
+
+      {/* ── Live Score (only when match is in progress) ──────── */}
+      {match.status === "live" && (
+        <LiveScoreBanner team1={match.team_1} team2={match.team_2} />
+      )}
 
       {/* ── Match Hero ────────────────────────────────────────── */}
       <div

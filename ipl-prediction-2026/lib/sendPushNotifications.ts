@@ -64,12 +64,10 @@ export async function sendMatchResultPush(
 
   // Remove expired subscriptions in the background
   if (stale.length > 0) {
-    supabase
+    void supabase
       .from("push_subscriptions")
       .delete()
-      .in("endpoint", stale)
-      .then(() => {})
-      .catch(() => {});
+      .in("endpoint", stale);
   }
 
   return sent;

@@ -10,6 +10,10 @@ import WeeklyWinnersBanner from "@/app/components/WeeklyWinnersBanner";
 import WeeklyPoolBanner from "@/app/components/WeeklyPoolBanner";
 import PastWinners from "@/app/components/PastWinners";
 import { matchToSlug } from "@/lib/matchSlug";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
+  ResponsiveContainer, Cell,
+} from "recharts";
 
 interface LeaderboardEntry {
   id: string;
@@ -43,6 +47,9 @@ export default function ResultsContent() {
   const [barsVisible, setBarsVisible] = useState(false);
   const barsRef = useRef<HTMLDivElement>(null);
   const [showPastWinners, setShowPastWinners] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const userId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const username = typeof window !== "undefined" ? localStorage.getItem("username") : null;
@@ -553,6 +560,90 @@ export default function ResultsContent() {
                   transition: "width 1.4s cubic-bezier(0.16,1,0.3,1) 0.1s",
                 }}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── AI vs Fan Odds Chart ─────────────────────────────── */}
+      {counts && match && mounted && (
+        <div className="rounded-2xl glass p-5" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="font-display font-bold text-white">📊 AI vs Fan Odds</h2>
+            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">Probability %</span>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">How the AI model compares to what fans think</p>
+
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart
+              data={[
+                {
+                  team: match.team_1,
+                  "AI Odds": match.team_1_probability,
+                  "Fan Vote": Math.round(t1Pct),
+                },
+                {
+                  team: match.team_2,
+                  "AI Odds": match.team_2_probability,
+                  "Fan Vote": Math.round(t2Pct),
+                },
+              ]}
+              barCategoryGap="30%"
+              barGap={4}
+              margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
+            >
+              <XAxis
+                dataKey="team"
+                tick={{ fill: "#9CA3AF", fontSize: 12, fontWeight: 700 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                domain={[0, 100]}
+                tickFormatter={(v) => `${v}%`}
+                tick={{ fill: "#6B7280", fontSize: 10 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <Tooltip
+                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                contentStyle={{
+                  background: "#0D1A2D",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "10px",
+                  fontSize: "12px",
+                  color: "#F9FAFB",
+                }}
+                formatter={(value: number, name: string) => [`${value}%`, name]}
+              />
+              <Legend
+                iconType="circle"
+                iconSize={8}
+                wrapperStyle={{ fontSize: "11px", color: "#9CA3AF", paddingTop: "8px" }}
+              />
+              <Bar dataKey="AI Odds" radius={[4, 4, 0, 0]}>
+                {[match.team_1, match.team_2].map((team, i) => {
+                  const cfg = getTeamConfig(team);
+                  return <Cell key={i} fill={cfg.color} />;
+                })}
+              </Bar>
+              <Bar dataKey="Fan Vote" radius={[4, 4, 0, 0]}>
+                {[match.team_1, match.team_2].map((team, i) => {
+                  const cfg = getTeamConfig(team);
+                  return <Cell key={i} fill={`${cfg.color}55`} />;
+                })}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+
+          <div className="flex justify-center gap-6 mt-2">
+            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              <span className="w-2 h-2 rounded-full bg-white inline-block" />
+              Solid = AI model probability
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              <span className="w-2 h-2 rounded-full bg-white/30 inline-block" />
+              Faded = Fan vote %
             </div>
           </div>
         </div>

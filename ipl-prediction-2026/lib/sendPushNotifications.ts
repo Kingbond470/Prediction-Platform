@@ -1,12 +1,6 @@
 import webpush from "web-push";
 import { supabase } from "./supabase";
 
-webpush.setVapidDetails(
-  "mailto:admin@iplprediction2026.in",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
-
 interface PushPayload {
   title: string;
   body: string;
@@ -24,10 +18,14 @@ export async function sendMatchResultPush(
   matchId: string,
   payload: PushPayload
 ): Promise<number> {
-  if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+  const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
+  if (!vapidPublic || !vapidPrivate) {
     console.warn("[push] VAPID keys not set — skipping push notifications");
     return 0;
   }
+  // Set lazily — safe to call multiple times with the same values
+  webpush.setVapidDetails("mailto:admin@iplprediction2026.in", vapidPublic, vapidPrivate);
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return 0;
   }

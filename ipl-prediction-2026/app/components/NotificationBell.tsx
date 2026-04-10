@@ -28,11 +28,14 @@ export default function NotificationBell({ userId, matchId }: Props) {
 
   async function checkSubscription() {
     try {
-      const reg = await navigator.serviceWorker.ready;
+      // getRegistration() resolves immediately (undefined if not registered),
+      // unlike .ready which hangs forever if no SW is registered yet.
+      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+      if (!reg) return;
       const sub = await reg.pushManager.getSubscription();
       setSubscribed(!!sub);
     } catch {
-      // service worker not ready yet
+      // silently ignore — user has not subscribed yet
     }
   }
 

@@ -3,6 +3,34 @@
 import { useEffect, useState } from "react";
 import { getTeamConfig } from "@/app/lib/teams";
 
+// CricAPI inning strings use full names: "Chennai Super Kings Inning 1"
+// Map short code → substrings to match in the inning name
+const TEAM_INNING_KEYWORDS: Record<string, string[]> = {
+  CSK:  ["chennai"],
+  MI:   ["mumbai"],
+  RCB:  ["bangalore", "bengaluru", "royal challengers"],
+  KKR:  ["kolkata"],
+  DC:   ["delhi"],
+  SRH:  ["sunrisers", "hyderabad"],
+  PBKS: ["punjab", "kings xi"],
+  RR:   ["rajasthan"],
+  GT:   ["gujarat"],
+  LSG:  ["lucknow"],
+};
+
+function matchInningToTeam(inning: string, team1: string, team2: string): string {
+  const lower = inning.toLowerCase();
+  for (const code of [team1, team2]) {
+    // Direct short code match (e.g. some APIs use "CSK Inning 1")
+    if (lower.includes(code.toLowerCase())) return code;
+    // Full name keyword match
+    const keywords = TEAM_INNING_KEYWORDS[code] ?? [];
+    if (keywords.some((kw) => lower.includes(kw))) return code;
+  }
+  // Last resort: first word of inning string
+  return inning.split(" ")[0].toUpperCase().slice(0, 3);
+}
+
 interface LiveScore {
   team: string;
   runs: number;
@@ -35,9 +63,12 @@ export default function LiveScoreBanner({ team1, team2 }: Props) {
     async function fetchLive() {
       try {
         const res = await fetch(`/api/live-score?team1=${team1}&team2=${team2}`);
-        if (!res.ok) { setError(true); return; }
+        if (!res.ok) { if (!cancelled) setError(true); return; }
         const data = await res.json();
-        if (!cancelled) setLiveData(data.match ?? null);
+        if (!cancelled) {
+          setError(false); // clear any prior error on success
+          setLiveData(data.match ?? null);
+        }
       } catch {
         if (!cancelled) setError(true);
       }
@@ -55,11 +86,8 @@ export default function LiveScoreBanner({ team1, team2 }: Props) {
 
   // Parse score innings — CricAPI puts batting team's inning last in score[]
   const innings: LiveScore[] = (liveData.score ?? []).map((s) => {
-    const teamCode = Object.keys({ [team1]: 1, [team2]: 1 }).find((t) =>
-      s.inning.toLowerCase().includes(t.toLowerCase())
-    ) ?? s.inning.split(" ")[0].toUpperCase().slice(0, 3);
     return {
-      team: teamCode,
+      team: matchInningToTeam(s.inning, team1, team2),
       runs: s.r ?? 0,
       wickets: s.w ?? 0,
       overs: s.o ?? 0,

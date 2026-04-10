@@ -10,6 +10,8 @@ import WeeklyWinnersBanner from "@/app/components/WeeklyWinnersBanner";
 import WeeklyPoolBanner from "@/app/components/WeeklyPoolBanner";
 import PastWinners from "@/app/components/PastWinners";
 import { matchToSlug } from "@/lib/matchSlug";
+import dynamic from "next/dynamic";
+const NotificationBell = dynamic(() => import("@/app/components/NotificationBell"), { ssr: false });
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend,
   ResponsiveContainer, Cell,
@@ -474,6 +476,9 @@ export default function ResultsContent() {
               ⏳ Match result pending — <span className="text-white font-semibold">check back after the game!</span>
             </p>
             <p className="text-gray-600 text-xs mt-1">Results are posted within 2 hours of match end.</p>
+            <div className="flex justify-center mt-3">
+              <NotificationBell userId={userId} matchId={matchId} />
+            </div>
           </div>
         ) : (
           <div

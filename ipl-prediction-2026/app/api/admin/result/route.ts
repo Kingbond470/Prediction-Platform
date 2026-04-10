@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { scoreMatch } from "@/lib/scoreMatch";
+import { sendMatchResultPush } from "@/lib/sendPushNotifications";
 
 // Constant-time secret check — prevents timing side-channel brute force
 function isAuthorized(request: NextRequest): boolean {
@@ -51,6 +52,15 @@ export async function POST(request: NextRequest) {
     }
 
     const scored = await scoreMatch(match_id, winner);
+
+    // Fire push notifications — fire-and-forget, never block the response
+    const resultUrl = `/results?match_id=${match_id}`;
+    sendMatchResultPush(match_id, {
+      title: `${winner} Win! 🏏`,
+      body: `${match.team_1} vs ${match.team_2} result is in — check how you did vs the AI!`,
+      url: resultUrl,
+      tag: `result-${match_id}`,
+    }).catch(() => {/* non-critical */});
 
     return NextResponse.json({
       success: true,

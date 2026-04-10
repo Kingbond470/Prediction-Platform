@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cric-sync",
-      "schedule": "*/15 10-20 * * *"
+      "schedule": "0 17 * * *"
     }
   ]
 }

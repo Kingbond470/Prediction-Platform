@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { supabase, Match } from "@/lib/supabase";
+import { MatchCardSkeleton } from "./components/MatchCardSkeleton";
 
 export const metadata: Metadata = {
   title: "Today's IPL Match Prediction 2026 — Free Cricket Prediction | Beat the AI",
@@ -32,9 +33,9 @@ const TournamentOdds = dynamic(() => import("./components/TournamentOdds"), {
 const HomeClient = dynamic(() => import("./components/HomeClient"), {
   ssr: false,
   loading: () => (
-    <div className="space-y-4">
+    <div>
       {[1, 2, 3].map((i) => (
-        <div key={i} className="h-64 rounded-2xl shimmer-bg" />
+        <MatchCardSkeleton key={i} />
       ))}
     </div>
   ),

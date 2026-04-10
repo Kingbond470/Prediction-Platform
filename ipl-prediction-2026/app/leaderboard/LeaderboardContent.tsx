@@ -27,6 +27,7 @@ export default function LeaderboardContent() {
   const [userRank, setUserRank] = useState<LeaderboardEntry | null>(null);
   const [totalPlayers, setTotalPlayers] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [secondsAgo, setSecondsAgo] = useState(0);
@@ -83,7 +84,7 @@ export default function LeaderboardContent() {
         }
       }
     } catch {
-      // keep stale data on error
+      if (leaderboard.length === 0) setFetchError(true); // only show error on empty first load
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -121,9 +122,40 @@ export default function LeaderboardContent() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-12 h-12 rounded-full border-2 border-red-500/20 border-t-red-500 animate-spin" />
-        <p className="text-gray-500 text-sm">Loading leaderboard...</p>
+      <div className="max-w-2xl mx-auto py-6 space-y-4 animate-pulse">
+        <div className="h-28 rounded-2xl shimmer-bg" />
+        <div className="h-10 rounded-xl shimmer-bg" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 px-4 py-3 rounded-xl"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <div className="w-8 h-8 rounded-full shimmer-bg shrink-0" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-3.5 w-32 rounded-full shimmer-bg" />
+              <div className="h-3 w-20 rounded-full shimmer-bg" />
+            </div>
+            <div className="h-5 w-16 rounded-full shimmer-bg" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="text-center py-24 max-w-sm mx-auto">
+        <div className="text-5xl mb-4">📡</div>
+        <h2 className="font-display font-bold text-xl text-white mb-2">Couldn&apos;t load leaderboard</h2>
+        <p className="text-gray-500 text-sm mb-6">Check your connection and try again.</p>
+        <button
+          onClick={() => { setFetchError(false); fetchLeaderboard(false); }}
+          className="px-6 py-3 rounded-xl font-bold text-sm text-white"
+          style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.4)" }}
+        >
+          ↺ Retry
+        </button>
       </div>
     );
   }

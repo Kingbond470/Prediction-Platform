@@ -38,6 +38,7 @@ export default function ResultsContent() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<LeaderboardEntry | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [activeTab, setActiveTab] = useState<"prediction" | "leaderboard">("prediction");
   const [barsVisible, setBarsVisible] = useState(false);
   const barsRef = useRef<HTMLDivElement>(null);
@@ -96,6 +97,7 @@ export default function ResultsContent() {
         setUserRank(leaderData.user_rank || null);
       } catch (e) {
         console.error(e);
+        setFetchError(true);
       } finally {
         setLoading(false);
       }
@@ -117,9 +119,27 @@ export default function ResultsContent() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-12 h-12 rounded-full border-2 border-red-500/20 border-t-red-500 animate-spin" />
-        <p className="text-gray-500 text-sm">Loading your prediction...</p>
+      <div className="max-w-2xl mx-auto py-6 space-y-5">
+        <div className="h-52 rounded-2xl shimmer-bg" />
+        <div className="h-24 rounded-2xl shimmer-bg" />
+        <div className="h-36 rounded-2xl shimmer-bg" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-12 rounded-xl shimmer-bg" />
+          <div className="h-12 rounded-xl shimmer-bg" />
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="text-center py-24 max-w-sm mx-auto">
+        <div className="text-5xl mb-4">📡</div>
+        <h2 className="font-display font-bold text-xl text-white mb-2">Couldn&apos;t load your result</h2>
+        <p className="text-gray-500 text-sm mb-6">Check your connection and try again.</p>
+        <Button onClick={() => { setFetchError(false); setLoading(true); }}>
+          ↺ Retry
+        </Button>
       </div>
     );
   }

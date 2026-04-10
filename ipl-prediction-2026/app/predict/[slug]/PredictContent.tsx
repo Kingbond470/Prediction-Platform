@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Match } from "@/lib/supabase";
 import { TeamBadge } from "@/app/components/TeamBadge";
 import { CountdownTimer } from "@/app/components/CountdownTimer";
@@ -9,6 +9,7 @@ import { Button } from "@/app/components/Button";
 import { getTeamConfig } from "@/app/lib/teams";
 import { getTeamPlayers } from "@/app/lib/players";
 import { matchToSlug } from "@/lib/matchSlug";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 interface Props {
   match: Match;
@@ -38,19 +39,63 @@ export default function PredictContent({ match }: Props) {
   const [t1Count, setT1Count] = useState(match.initial_count_team_1);
   const [t2Count, setT2Count] = useState(match.initial_count_team_2);
   const [recentVotes, setRecentVotes] = useState(0);
+  const [liveFlash, setLiveFlash] = useState(false);
+  const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const t1Ref = useRef(match.initial_count_team_1);
+  const t2Ref = useRef(match.initial_count_team_2);
 
-  useEffect(() => {
+  const fetchCounts = () => {
     fetch(`/api/predictions/counts?match_id=${match.id}`)
       .then((r) => r.json())
       .then((d) => {
         if (d.counts) {
-          setT1Count(match.initial_count_team_1 + (d.counts.team_1 ?? 0));
-          setT2Count(match.initial_count_team_2 + (d.counts.team_2 ?? 0));
+          const newT1 = match.initial_count_team_1 + (d.counts.team_1 ?? 0);
+          const newT2 = match.initial_count_team_2 + (d.counts.team_2 ?? 0);
+          t1Ref.current = newT1;
+          t2Ref.current = newT2;
+          setT1Count(newT1);
+          setT2Count(newT2);
           setRecentVotes(d.counts.recent_1h ?? 0);
         }
       })
       .catch(() => {/* keep seed counts */});
-  }, [match.id, match.initial_count_team_1, match.initial_count_team_2]);
+  };
+
+  useEffect(() => {
+    // Initial fetch
+    fetchCounts();
+
+    if (!votingOpen) return;
+
+    // Supabase Realtime broadcast — instant update when anyone votes
+    const channel = supabaseBrowser
+      .channel(`votes:${match.id}`)
+      .on("broadcast", { event: "vote" }, (payload) => {
+        const { team } = payload.payload as { team: string };
+        if (team === match.team_1) {
+          t1Ref.current += 1;
+          setT1Count(t1Ref.current);
+        } else if (team === match.team_2) {
+          t2Ref.current += 1;
+          setT2Count(t2Ref.current);
+        }
+        setRecentVotes((v) => v + 1);
+        setLiveFlash(true);
+        setTimeout(() => setLiveFlash(false), 1500);
+      })
+      .subscribe((status) => {
+        setRealtimeConnected(status === "SUBSCRIBED");
+      });
+
+    // Polling fallback every 20s — catches votes from home modal (no broadcast)
+    const poll = setInterval(fetchCounts, 20_000);
+
+    return () => {
+      supabaseBrowser.removeChannel(channel);
+      clearInterval(poll);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [match.id, match.team_1, match.team_2, match.initial_count_team_1, match.initial_count_team_2, votingOpen]);
 
   const players1 = getTeamPlayers(match.team_1);
   const players2 = getTeamPlayers(match.team_2);
@@ -201,16 +246,22 @@ export default function PredictContent({ match }: Props) {
       {/* ── Community Vote Bar ────────────────────────────────── */}
       <div className="glass rounded-2xl p-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display font-bold text-white text-base">
-            🌍 Fan Votes
-          </h2>
-          <div className="flex items-center gap-1.5">
-            {recentVotes > 0 && (
-              <span className="text-xs text-green-400 font-semibold animate-pulse">
-                +{recentVotes} in last hour
+          <div className="flex items-center gap-2">
+            <h2 className="font-display font-bold text-white text-base">🌍 Fan Votes</h2>
+            {votingOpen && realtimeConnected && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-green-400 uppercase tracking-widest">
+                <span className="live-dot" />
+                Live
               </span>
             )}
-            <span className="text-xs text-gray-600">
+          </div>
+          <div className="flex items-center gap-1.5">
+            {recentVotes > 0 && (
+              <span className={`text-xs font-semibold transition-colors duration-300 ${liveFlash ? "text-green-300" : "text-green-500"}`}>
+                +{recentVotes} this hour
+              </span>
+            )}
+            <span className={`text-xs transition-all duration-300 ${liveFlash ? "text-white font-bold" : "text-gray-600"}`}>
               {totalVotes.toLocaleString("en-IN")} total
             </span>
           </div>

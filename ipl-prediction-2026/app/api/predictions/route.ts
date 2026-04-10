@@ -167,6 +167,17 @@ export async function POST(request: NextRequest) {
     const team2Count = match.initial_count_team_2 + (team2RealCount || 0);
     const total = team1Count + team2Count;
 
+    // Broadcast to all clients watching this match via Supabase Realtime
+    // Fire-and-forget — don't let broadcast failure block the response
+    supabase
+      .channel(`votes:${match_id}`)
+      .send({
+        type: "broadcast",
+        event: "vote",
+        payload: { team: predicted_team },
+      })
+      .catch(() => {/* non-critical */});
+
     return NextResponse.json({
       success: true,
       prediction,

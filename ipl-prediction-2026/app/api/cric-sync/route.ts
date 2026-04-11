@@ -11,7 +11,7 @@
 import { supabase } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
 import { scoreMatch } from "@/lib/scoreMatch";
-import { fetchCompletedIPLMatches } from "@/lib/cricApi";
+import { fetchCompletedIPLMatches, fetchCricApiMatchHistory, ParsedCricMatch } from "@/lib/cricApi";
 import { sendMatchResultPush } from "@/lib/sendPushNotifications";
 import { timingSafeEqual } from "crypto";
 
@@ -43,7 +43,23 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const completedMatches = await fetchCompletedIPLMatches();
+    // Fetch from both endpoints and deduplicate by cricId
+    const [current, historical] = await Promise.allSettled([
+      fetchCompletedIPLMatches(),
+      fetchCricApiMatchHistory(),
+    ]);
+
+    const currentMatches = current.status === "fulfilled" ? current.value : [];
+    const historicalMatches = historical.status === "fulfilled"
+      ? historical.value.filter((m: ParsedCricMatch) => m.matchEnded && (m.winner !== null || m.noResult))
+      : [];
+
+    // Merge: current takes precedence; historical fills in older matches
+    const seen = new Set(currentMatches.map((m) => m.cricId));
+    const completedMatches = [
+      ...currentMatches,
+      ...historicalMatches.filter((m) => !seen.has(m.cricId)),
+    ];
 
     if (completedMatches.length === 0) {
       return NextResponse.json({ success: true, processed: 0, message: "No completed matches found" });

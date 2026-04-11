@@ -103,55 +103,93 @@ export function parseWinnerFromStatus(status: string, team1: string, team2: stri
 
 // ── Fetch functions ────────────────────────────────────────────────────────────
 
+/** Parse a single CricAPI match object into our ParsedCricMatch shape. */
+function parseCricMatch(m: CricMatch): ParsedCricMatch {
+  const [rawTeam1, rawTeam2] = m.teams ?? ["TBD", "TBD"];
+  const team1 = toShortCode(rawTeam1);
+  const team2 = toShortCode(rawTeam2);
+  const winner = m.matchEnded ? parseWinnerFromStatus(m.status, team1, team2) : null;
+  const noResult = m.matchEnded && winner === null && isNoResultStatus(m.status);
+  return {
+    cricId: m.id,
+    team1,
+    team2,
+    name: m.name,
+    status: m.status,
+    venue: m.venue,
+    dateTimeGMT: m.dateTimeGMT,
+    matchStarted: m.matchStarted,
+    matchEnded: m.matchEnded,
+    winner,
+    noResult,
+    score: m.score ?? [],
+  };
+}
+
+function isIPLMatch(m: CricMatch): boolean {
+  const name = m.name.toLowerCase();
+  return m.matchType === "t20" && (
+    name.includes("ipl") ||
+    name.includes("indian premier league") ||
+    isIPLTeams(m.teams)
+  );
+}
+
 /**
- * Fetch all current (live + recent) IPL matches from CricAPI.
- * Filters to T20 matches in the IPL series only.
+ * Fetch live + recent IPL matches from /currentMatches.
+ * Only covers matches active in the last ~24h.
  */
 export async function fetchCricApiMatches(): Promise<ParsedCricMatch[]> {
   const apiKey = process.env.CRICAPI_KEY;
   if (!apiKey) throw new Error("CRICAPI_KEY not set");
 
   const res = await fetch(`${BASE_URL}/currentMatches?apikey=${apiKey}&offset=0`, {
-    next: { revalidate: 60 }, // cache for 60 seconds
+    next: { revalidate: 60 },
   });
-
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`CricAPI ${res.status}: ${body}`);
-  }
-
+  if (!res.ok) throw new Error(`CricAPI currentMatches ${res.status}`);
   const json: CricApiResponse = await res.json();
   if (json.status !== "success" || !Array.isArray(json.data)) {
     throw new Error(`CricAPI unexpected response: ${json.status}`);
   }
+  return json.data.filter(isIPLMatch).map(parseCricMatch);
+}
 
-  return json.data
-    .filter((m) => {
-      const name = m.name.toLowerCase();
-      // Keep only IPL T20 matches
-      return m.matchType === "t20" && (name.includes("ipl") || name.includes("indian premier league") || isIPLTeams(m.teams));
-    })
-    .map((m): ParsedCricMatch => {
-      const [rawTeam1, rawTeam2] = m.teams ?? ["TBD", "TBD"];
-      const team1 = toShortCode(rawTeam1);
-      const team2 = toShortCode(rawTeam2);
-      const winner = m.matchEnded ? parseWinnerFromStatus(m.status, team1, team2) : null;
-      const noResult = m.matchEnded && winner === null && isNoResultStatus(m.status);
-      return {
-        cricId: m.id,
-        team1,
-        team2,
-        name: m.name,
-        status: m.status,
-        venue: m.venue,
-        dateTimeGMT: m.dateTimeGMT,
-        matchStarted: m.matchStarted,
-        matchEnded: m.matchEnded,
-        winner,
-        noResult,
-        score: m.score ?? [],
-      };
-    });
+/**
+ * Fetch IPL matches from /matches (series-based, broader history).
+ * Catches matches completed >24h ago that have dropped off currentMatches.
+ * Uses the IPL 2026 series ID — falls back gracefully if series not found.
+ */
+export async function fetchCricApiMatchHistory(): Promise<ParsedCricMatch[]> {
+  const apiKey = process.env.CRICAPI_KEY;
+  if (!apiKey) return [];
+
+  // Fetch series list to find IPL 2026
+  const seriesRes = await fetch(
+    `${BASE_URL}/series?apikey=${apiKey}&offset=0&search=indian+premier+league`,
+    { next: { revalidate: 3600 } } // series list changes rarely
+  );
+  if (!seriesRes.ok) return [];
+  const seriesJson = await seriesRes.json();
+  if (seriesJson.status !== "success" || !Array.isArray(seriesJson.data)) return [];
+
+  // Find IPL 2026 series
+  const ipl = seriesJson.data.find((s: { name: string }) => {
+    const n = s.name.toLowerCase();
+    return (n.includes("indian premier league") || n.includes("ipl")) && n.includes("2026");
+  });
+  if (!ipl?.id) return [];
+
+  // Fetch all matches in that series
+  const matchRes = await fetch(
+    `${BASE_URL}/series_info?apikey=${apiKey}&id=${ipl.id}`,
+    { next: { revalidate: 300 } }
+  );
+  if (!matchRes.ok) return [];
+  const matchJson = await matchRes.json();
+  if (matchJson.status !== "success") return [];
+
+  const matches: CricMatch[] = matchJson.data?.matchList ?? [];
+  return matches.filter(isIPLMatch).map(parseCricMatch);
 }
 
 /** Returns true for rain/tie/no-result statuses where the match ended without a winner. */

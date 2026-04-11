@@ -13,6 +13,62 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import dynamic from "next/dynamic";
 const LiveScoreBanner = dynamic(() => import("@/app/components/LiveScoreBanner"), { ssr: false });
 
+// ── AI Probability Chart (Recharts) ───────────────────────────────────────────
+import {
+  BarChart, Bar, XAxis, YAxis, Cell, ResponsiveContainer, LabelList,
+} from "recharts";
+
+function AiOddsChart({ match, t1Pct, t2Pct }: {
+  match: { team_1: string; team_2: string; team_1_probability: number; team_2_probability: number };
+  t1Pct: number;
+  t2Pct: number;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  const t1 = getTeamConfig(match.team_1);
+  const t2 = getTeamConfig(match.team_2);
+
+  const data = [
+    { label: match.team_1, ai: match.team_1_probability, fan: t1Pct, fill: t1.color },
+    { label: match.team_2, ai: match.team_2_probability, fan: t2Pct, fill: t2.color },
+  ];
+
+  return (
+    <div className="glass rounded-2xl p-5">
+      <h2 className="font-display font-bold text-white text-base mb-1">📊 AI Odds vs Fan Votes</h2>
+      <p className="text-gray-500 text-xs mb-4">See where the AI and fans agree — or disagree.</p>
+      <div className="flex gap-4 text-[10px] text-gray-500 mb-3">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-2 rounded-sm bg-white/30" /> AI Probability
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-2 rounded-sm opacity-60" style={{ background: data[0].fill }} /> Fan Vote %
+        </span>
+      </div>
+      <ResponsiveContainer width="100%" height={160}>
+        <BarChart data={data} barCategoryGap="30%" barGap={4}>
+          <XAxis dataKey="label" tick={{ fill: "#9CA3AF", fontSize: 12, fontWeight: 700 }} axisLine={false} tickLine={false} />
+          <YAxis hide domain={[0, 100]} />
+          <Bar dataKey="ai" name="AI %" radius={[4, 4, 0, 0]}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.fill} fillOpacity={0.9} />
+            ))}
+            <LabelList dataKey="ai" position="top" formatter={(v: number) => `${v}%`} style={{ fill: "#fff", fontSize: 11, fontWeight: 700 }} />
+          </Bar>
+          <Bar dataKey="fan" name="Fan %" radius={[4, 4, 0, 0]}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.fill} fillOpacity={0.4} />
+            ))}
+            <LabelList dataKey="fan" position="top" formatter={(v: number) => `${v}%`} style={{ fill: "#9CA3AF", fontSize: 11 }} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 interface Props {
   match: Match;
 }
@@ -293,6 +349,9 @@ export default function PredictContent({ match }: Props) {
           </Button>
         )}
       </div>
+
+      {/* ── AI Odds vs Fan Votes Chart ───────────────────────── */}
+      <AiOddsChart match={match} t1Pct={t1Pct} t2Pct={t2Pct} />
 
       {/* ── Key Players to Watch ──────────────────────────────── */}
       {(players1 || players2) && (

@@ -67,6 +67,35 @@ function Field({
   );
 }
 
+// ── Push subscription helper ──────────────────────────────────────────────────
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  return Uint8Array.from(Array.from(raw).map((c) => c.charCodeAt(0)));
+}
+
+async function subscribeToPush(userId: string): Promise<void> {
+  const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  if (!vapidKey || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") return;
+
+  await navigator.serviceWorker.register("/sw.js");
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(vapidKey) as unknown as string,
+  });
+
+  await fetch("/api/push/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscription: sub, user_id: userId }),
+  });
+}
+
 // ── Main form ─────────────────────────────────────────────────────────────────
 function SignupForm() {
   const router = useRouter();
@@ -104,6 +133,7 @@ function SignupForm() {
   const [touched, setTouched] = useState({ firstName: false, phone: false, username: false });
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [wantsPush, setWantsPush] = useState(true);
 
   const firstNameErr = touched.firstName ? validateFirstName(firstName) : null;
   const phoneErr     = touched.phone     ? validatePhone(phone)         : null;
@@ -156,6 +186,10 @@ function SignupForm() {
         localStorage.removeItem("selectedMatchTeams");
         // Signal NavAuth (in the shared layout) to re-read username immediately
         window.dispatchEvent(new CustomEvent("authChanged"));
+
+        // Push opt-in — fire-and-forget, never block the redirect
+        if (wantsPush) subscribeToPush(data.user_id).catch(() => {});
+
         const redirect = localStorage.getItem("authRedirect") || "/";
         localStorage.removeItem("authRedirect");
         router.push(redirect);
@@ -356,6 +390,34 @@ function SignupForm() {
               </div>
             )}
           </div>
+
+          {/* Push notification opt-in */}
+          {"Notification" in (typeof window !== "undefined" ? window : {}) && (
+            <button
+              type="button"
+              onClick={() => setWantsPush((v) => !v)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all"
+              style={{
+                background: wantsPush ? "rgba(239,68,68,0.08)" : "rgba(255,255,255,0.04)",
+                border: wantsPush ? "1px solid rgba(239,68,68,0.3)" : "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <span className="text-xl shrink-0">{wantsPush ? "🔔" : "🔕"}</span>
+              <div className="flex-1 text-left">
+                <div className="text-sm font-semibold text-white">Match result alerts</div>
+                <div className="text-xs text-gray-500 mt-0.5">Get notified the moment results are in</div>
+              </div>
+              <div
+                className="w-10 h-5 rounded-full relative shrink-0 transition-colors"
+                style={{ background: wantsPush ? "#EF4444" : "rgba(255,255,255,0.12)" }}
+              >
+                <div
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all"
+                  style={{ left: wantsPush ? "calc(100% - 1.125rem)" : "0.125rem" }}
+                />
+              </div>
+            </button>
+          )}
 
           {/* Server error */}
           {serverError && (

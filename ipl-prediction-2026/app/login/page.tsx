@@ -12,9 +12,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Redirect already-logged-in users to home
+  // Redirect already-logged-in users (check localStorage, then cookie via /api/auth/me)
   useEffect(() => {
-    if (localStorage.getItem("userId")) router.replace("/");
+    if (localStorage.getItem("userId")) { router.replace("/"); return; }
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.success && d.user_id) {
+          localStorage.setItem("userId",   d.user_id);
+          localStorage.setItem("username", d.username ?? "");
+          localStorage.setItem("firstName", d.name ?? "");
+          if (d.favorite_team) localStorage.setItem("favoriteTeam", d.favorite_team);
+          router.replace("/");
+        }
+      })
+      .catch(() => {});
   }, [router]);
 
   const isValid = phone.length === 10 && username.trim().length >= 3;

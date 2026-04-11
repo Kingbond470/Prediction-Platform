@@ -47,7 +47,28 @@ export default function HomeClient({ initialMatches }: HomeClientProps) {
   const resultMatches = initialMatches.filter((m) => m.status === "completed");
 
   useEffect(() => {
-    const storedUserId = localStorage.getItem("userId");
+    let storedUserId = localStorage.getItem("userId");
+
+    // If localStorage is empty, the uid cookie may still be valid (e.g. after a
+    // browser-data clear or a new tab). Hydrate localStorage from the server.
+    if (!storedUserId) {
+      fetch("/api/auth/me")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (d?.success && d.user_id) {
+            localStorage.setItem("userId",    d.user_id);
+            localStorage.setItem("username",  d.username ?? "");
+            localStorage.setItem("firstName", d.name ?? "");
+            if (d.favorite_team) localStorage.setItem("favoriteTeam", d.favorite_team);
+            setUserId(d.user_id);
+            setUsername(d.username);
+            setFavTeam(d.favorite_team ?? null);
+          }
+        })
+        .catch(() => {/* no-op */});
+      return; // remaining setup runs again once state updates trigger re-render
+    }
+
     setUserId(storedUserId);
     setUsername(localStorage.getItem("username"));
     setFavTeam(localStorage.getItem("favoriteTeam"));

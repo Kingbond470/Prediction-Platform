@@ -176,7 +176,8 @@ export async function GET(request: NextRequest) {
       weekly_stats: weeklyStats,
       total_players: totalPlayers,
     });
-    res.headers.set("Cache-Control", "s-maxage=30, stale-while-revalidate=60");
+    // No CDN caching — response contains personalized user_rank based on cookie
+    res.headers.set("Cache-Control", "private, no-store");
     return res;
   } catch {
     return NextResponse.json(

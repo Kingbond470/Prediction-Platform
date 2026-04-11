@@ -58,7 +58,7 @@ export async function scoreMatch(matchId: string, winner: string): Promise<numbe
 
     await supabase
       .from("predictions")
-      .update({ is_correct: isCorrect, points_earned: points })
+      .update({ is_correct: isCorrect, is_correct_vs_ai: beatAI, points_earned: points })
       .eq("id", pred.id);
 
     if (!userPoints[pred.user_id]) {

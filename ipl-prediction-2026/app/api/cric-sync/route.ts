@@ -70,7 +70,17 @@ export async function GET(request: NextRequest) {
       if (!match) continue; // not in our DB yet — skip
 
       if (match.status === "completed") {
-        results.push({ match: `${cm.team1} vs ${cm.team2}`, winner: cm.winner!, scored: 0, alreadyDone: true });
+        results.push({ match: `${cm.team1} vs ${cm.team2}`, winner: cm.winner ?? "No Result", scored: 0, alreadyDone: true });
+        continue;
+      }
+
+      // No result (rain/abandoned) — mark completed but skip scoring
+      if (cm.noResult) {
+        await supabase
+          .from("matches")
+          .update({ status: "completed", winner: null })
+          .eq("id", match.id);
+        results.push({ match: `${cm.team1} vs ${cm.team2}`, winner: "No Result", scored: 0, alreadyDone: false });
         continue;
       }
 

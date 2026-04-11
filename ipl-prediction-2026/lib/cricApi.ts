@@ -70,6 +70,7 @@ export interface ParsedCricMatch {
   matchStarted: boolean;
   matchEnded: boolean;
   winner: string | null;   // short code if ended and winner parseable, else null
+  noResult: boolean;       // true for rain/tie/no-result — match ended but no winner
   score: CricScore[];
 }
 
@@ -134,6 +135,8 @@ export async function fetchCricApiMatches(): Promise<ParsedCricMatch[]> {
       const [rawTeam1, rawTeam2] = m.teams ?? ["TBD", "TBD"];
       const team1 = toShortCode(rawTeam1);
       const team2 = toShortCode(rawTeam2);
+      const winner = m.matchEnded ? parseWinnerFromStatus(m.status, team1, team2) : null;
+      const noResult = m.matchEnded && winner === null && isNoResultStatus(m.status);
       return {
         cricId: m.id,
         team1,
@@ -144,10 +147,23 @@ export async function fetchCricApiMatches(): Promise<ParsedCricMatch[]> {
         dateTimeGMT: m.dateTimeGMT,
         matchStarted: m.matchStarted,
         matchEnded: m.matchEnded,
-        winner: m.matchEnded ? parseWinnerFromStatus(m.status, team1, team2) : null,
+        winner,
+        noResult,
         score: m.score ?? [],
       };
     });
+}
+
+/** Returns true for rain/tie/no-result statuses where the match ended without a winner. */
+function isNoResultStatus(status: string): boolean {
+  const lower = status.toLowerCase();
+  return (
+    lower.includes("no result") ||
+    lower.includes("rain") ||
+    lower.includes("tied") ||
+    lower.includes("match abandoned") ||
+    lower.includes("abandoned")
+  );
 }
 
 /** Quick check: does the teams array contain known IPL teams? */
@@ -157,9 +173,9 @@ function isIPLTeams(teams: string[]): boolean {
 }
 
 /**
- * Fetch only completed IPL matches (matchEnded = true) with a clear winner.
+ * Fetch completed IPL matches — either with a clear winner or a no-result outcome.
  */
 export async function fetchCompletedIPLMatches() {
   const all = await fetchCricApiMatches();
-  return all.filter((m) => m.matchEnded && m.winner !== null);
+  return all.filter((m) => m.matchEnded && (m.winner !== null || m.noResult));
 }
